@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:keepass_one/src/rust/api/simple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/src/rust/frb_generated.dart';
 
 Future<void> main() async {
@@ -12,14 +11,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('flutter_rust_bridge quickstart')),
-        body: Center(
-          child: Text(
-            'Action: Call Rust `greet("Tom")`\nResult: `${greet(name: "Tom")}`',
-          ),
-        ),
+    return CupertinoApp(
+      home: CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(middle: Text('Keepass One')),
+        child: Center(child: Text('Hello, World!')),
       ),
     );
   }
