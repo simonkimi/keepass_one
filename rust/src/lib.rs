@@ -1,3 +1,4 @@
 pub mod api;
 mod frb_generated;
-mod kdbx;
+pub mod kdbx;
+pub mod utils;

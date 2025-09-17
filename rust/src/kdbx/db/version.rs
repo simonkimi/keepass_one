@@ -1,5 +1,5 @@
-use byteorder::{LittleEndian, ReadBytesExt};
-use std::io::{Cursor, Read};
+use byteorder::ByteOrder;
+use byteorder::LittleEndian;
 
 use crate::kdbx::error::KdbxFileError;
 
@@ -21,22 +21,18 @@ pub enum KdbxVersion {
 }
 
 impl KdbxVersion {
-    pub fn parse(cursor: &mut Cursor<&[u8]>) -> Result<Self, KdbxFileError> {
-        if cursor.get_ref().len() < KDBX_HEADER_SIZE {
+    pub fn parse(data: &[u8]) -> Result<Self, KdbxFileError> {
+        if data.len() < KDBX_HEADER_SIZE {
             return Err(KdbxFileError::InvalidMagicNumber);
         }
 
-        let mut identifier = [0u8; 4];
-        cursor
-            .read_exact(&mut identifier)
-            .map_err(|_| KdbxFileError::InvalidMagicNumber)?;
-        if identifier != KDBX_IDENTIFIER {
+        if data[..4] != KDBX_IDENTIFIER {
             return Err(KdbxFileError::InvalidMagicNumber);
         }
-
-        let version = cursor.read_u32::<LittleEndian>().unwrap();
-        let file_minor_version = cursor.read_u16::<LittleEndian>().unwrap();
-        let file_major_version = cursor.read_u16::<LittleEndian>().unwrap();
+        
+        let version = LittleEndian::read_u32(&data[4..8]);
+        let file_minor_version = LittleEndian::read_u16(&data[8..10]);
+        let file_major_version = LittleEndian::read_u16(&data[10..12]);
 
         let kdbx_version = match version {
             KEEPASS_1_ID => KdbxVersion::KDB(file_major_version),
