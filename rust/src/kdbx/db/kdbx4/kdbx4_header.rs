@@ -1,4 +1,4 @@
-use crate::kdbx::db::variant_dictionary::{VariantDictionary, VariantDictionaryValue};
+use crate::kdbx::db::variant_dictionary::VariantDictionary;
 use crate::kdbx::error::KdbxFileError;
 use crate::utils::cursor_utils::CursorExt;
 use anyhow::anyhow;
@@ -82,7 +82,7 @@ struct Kdbx4Header {
     master_salt_seed: Option<[u8; 32]>,
     encryption_iv: Option<Vec<u8>>,
     kdf_parameters: Option<KdfConfig>,
-    public_custom_data: Option<Vec<u8>>,
+    public_custom_data: Option<VariantDictionary>,
 }
 
 impl Kdbx4Header {
@@ -109,7 +109,10 @@ impl Kdbx4Header {
                 HEADER_END => {
                     break;
                 }
-                HEADER_ENCRYPTION_ALGORITHM => {}
+                HEADER_ENCRYPTION_ALGORITHM => {
+                    entity.encryption_algorithm =
+                        Some(EncryptionAlgorithm::try_from(hf_buffer)?);
+                }
                 HEADER_COMPRESSION_ALGORITHM => {
                     entity.compression_config = Some(CompressionConfig::try_from(
                         LittleEndian::read_u32(&hf_buffer),
@@ -125,11 +128,17 @@ impl Kdbx4Header {
                     entity.encryption_iv = Some(hf_buffer.to_vec());
                 }
                 HEADER_KDF_PARAMETERS => {
-                    let value = VariantDictionary::parse(&hf_buffer)
+                    let vd = VariantDictionary::parse(&hf_buffer)
                         .map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
-                    let kdf = parse_kdf_keys(&value)
-                        .map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
+                    let kdf =
+                        parse_kdf_keys(&vd).map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
                     entity.kdf_parameters = Some(kdf);
+                }
+
+                HEADER_PUBLIC_CUSTOM_DATA => {
+                    let vd = VariantDictionary::parse(&hf_buffer)
+                        .map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
+                    entity.public_custom_data = Some(vd);
                 }
                 _ => {
                     return Err(KdbxFileError::InvalidHeader);
@@ -142,25 +151,25 @@ impl Kdbx4Header {
 }
 
 fn parse_kdf_keys(vd: &VariantDictionary) -> anyhow::Result<KdfConfig> {
-    let uuid = vd.get::<Vec<u8>>("$UUID")?;
+    let uuid: &Vec<u8> = vd.get("$UUID")?;
     if uuid == &KDF_AES {
-        let salt = vd.get::<Vec<u8>>("S")?;
+        let salt: &Vec<u8> = vd.get("S")?;
         if salt.len() != 32 {
             return Err(anyhow!("Aes密钥长度不匹配"));
         }
 
-        let rounds = vd.get::<u64>("R")?;
+        let rounds: &u64 = vd.get("R")?;
 
         Ok(KdfConfig::Aes {
-            salt: salt[..].try_into().unwrap(),
+            salt: salt[..].try_into()?,
             rounds: *rounds,
         })
     } else if uuid == &KDF_ARGON2D || uuid == &KDF_ARGON2ID {
-        let version = vd.get::<u32>("V")?;
-        let salt = vd.get::<Vec<u8>>("S")?;
-        let iterations = vd.get::<u64>("I")?;
-        let memory = vd.get::<u64>("M")?;
-        let parallelism = vd.get::<u32>("P")?;
+        let version: &u32 = vd.get("V")?;
+        let salt: &Vec<u8> = vd.get("S")?;
+        let iterations: &u64 = vd.get("I")?;
+        let memory: &u64 = vd.get("M")?;
+        let parallelism: &u32 = vd.get("P")?;
 
         Ok(KdfConfig::Argon2 {
             version: *version,
