@@ -1,17 +1,37 @@
-use crate::utils::crypto::calculate_sha256;
+use crate::crypto;
+use crate::crypto::hash::calculate_sha256;
 use base64::Engine;
+use generic_array::{typenum::U32, GenericArray};
 use std::io::Read;
 use sxd_document::parser;
 use sxd_xpath::evaluate_xpath;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum KdbxKeyError {
+    #[error("No key parts available. Please provide a master key or key file.")]
+    NoKeyParts,
+    #[error("Failed to parse key file. Ensure it is a valid key file format.")]
+    FailedToParseKeyFile,
+}
 
 pub struct KdbxKey {
     pub master_key: Option<String>,
     pub key_file: Option<Vec<u8>>,
 }
 
+pub type KeyElement = Vec<u8>;
+
 impl KdbxKey {
-    pub fn add_master_key(&mut self, key: String) {
-        self.master_key = Some(key);
+    pub fn new() -> Self {
+        KdbxKey {
+            master_key: None,
+            key_file: None,
+        }
+    }
+
+    pub fn add_master_key(&mut self, key: &str) {
+        self.master_key = Some(key.to_string());
     }
 
     pub fn add_key_file(&mut self, key_file: &mut dyn Read) -> Result<(), std::io::Error> {
@@ -21,27 +41,32 @@ impl KdbxKey {
         Ok(())
     }
 
-    pub fn get_key_bytes(&self) -> anyhow::Result<Vec<Vec<u8>>> {
+    pub fn is_empty(&self) -> bool {
+        self.master_key.is_none() && self.key_file.is_none()
+    }
+
+    pub fn calc_key_hash(&self) -> Result<GenericArray<u8, U32>, KdbxKeyError> {
         let mut key_parts: Vec<Vec<u8>> = Vec::new();
 
         if let Some(ref master_key) = self.master_key {
             let master_key_hash = calculate_sha256(master_key.as_bytes());
-            key_parts.push(master_key_hash);
+            key_parts.push(master_key_hash.to_vec());
         }
 
         if let Some(ref key_file_buf) = self.key_file {
-            key_parts.push(try_parse_keyfile(key_file_buf).ok_or_else(|| {
-                anyhow::anyhow!("Failed to parse key file. Ensure it is a valid key file format.")
-            })?);
+            key_parts.push(
+                try_parse_keyfile(key_file_buf)
+                    .ok_or_else(|| KdbxKeyError::FailedToParseKeyFile)?,
+            );
         }
 
         if key_parts.is_empty() {
-            return Err(anyhow::anyhow!(
-                "No key parts available. Please provide a master key or key file."
-            ));
+            return Err(KdbxKeyError::NoKeyParts);
         }
 
-        Ok(key_parts)
+        Ok(crypto::hash::calculate_sha256_multiple(
+            &key_parts.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>(),
+        ))
     }
 }
 

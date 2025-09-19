@@ -1,11 +1,12 @@
+use crate::crypto;
 use crate::kdbx::db::variant_dictionary::VariantDictionary;
-use crate::kdbx::error::KdbxFileError;
 use crate::utils::cursor_utils::CursorExt;
 use anyhow::anyhow;
 use byteorder::ByteOrder;
 use byteorder::{LittleEndian, ReadBytesExt};
 use hex_literal::hex;
-use std::io::Cursor;
+use std::io::{Cursor, Seek, SeekFrom};
+use thiserror::Error;
 
 const HEADER_END: u8 = 0;
 const HEADER_ENCRYPTION_ALGORITHM: u8 = 2;
@@ -23,19 +24,28 @@ const KDF_AES: [u8; 16] = hex!("C9D9F39A628A4460BF740D08C18A4FEA");
 const KDF_ARGON2D: [u8; 16] = hex!("EF636DDF8C29444B91F7A9A403E30A0C");
 const KDF_ARGON2ID: [u8; 16] = hex!("9E298B1956DB4773B23DFC3EC6F0A1E6");
 
+#[derive(Debug, Error)]
+pub enum Kdbx4HeaderError {
+    #[error("Invalid KDBX header")]
+    InvalidHeader,
+
+    #[error("Invalid variant dictionary")]
+    InvalidVariantDictionary,
+}
+
 pub enum CompressionConfig {
     None,
     GZip,
 }
 
 impl TryFrom<u32> for CompressionConfig {
-    type Error = KdbxFileError;
+    type Error = Kdbx4HeaderError;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(CompressionConfig::None),
             1 => Ok(CompressionConfig::GZip),
-            _ => Err(KdbxFileError::InvalidHeader),
+            _ => Err(Kdbx4HeaderError::InvalidHeader),
         }
     }
 }
@@ -47,7 +57,7 @@ pub enum EncryptionAlgorithm {
 }
 
 impl TryFrom<&[u8]> for EncryptionAlgorithm {
-    type Error = KdbxFileError;
+    type Error = Kdbx4HeaderError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         if value == CIPHERSUITE_AES256 {
@@ -57,7 +67,7 @@ impl TryFrom<&[u8]> for EncryptionAlgorithm {
         } else if value == CIPHERSUITE_TWOFISH {
             Ok(EncryptionAlgorithm::Twofish)
         } else {
-            Err(KdbxFileError::InvalidHeader)
+            Err(Kdbx4HeaderError::InvalidHeader)
         }
     }
 }
@@ -73,80 +83,128 @@ pub enum KdfConfig {
         iterations: u64,
         memory: u64,
         parallelism: u32,
+        variant: argon2::Variant,
     },
 }
 
-struct Kdbx4Header {
-    encryption_algorithm: Option<EncryptionAlgorithm>,
-    compression_config: Option<CompressionConfig>,
-    master_salt_seed: Option<[u8; 32]>,
-    encryption_iv: Option<Vec<u8>>,
-    kdf_parameters: Option<KdfConfig>,
-    public_custom_data: Option<VariantDictionary>,
+impl KdfConfig {
+    pub fn get_kdf(&self) -> Box<dyn crypto::kdf::Kdf> {
+        match self {
+            KdfConfig::Aes { salt, rounds } => Box::new(crypto::kdf::AesKdf {
+                seed: salt.to_vec(),
+                rounds: *rounds,
+            }),
+            KdfConfig::Argon2 {
+                version,
+                salt,
+                iterations,
+                memory,
+                parallelism,
+                variant,
+            } => {
+                Box::new(crypto::kdf::Argon2Kdf {
+                    version: match version {
+                        0x10 => argon2::Version::Version10,
+                        0x13 => argon2::Version::Version13,
+                        _ => argon2::Version::Version13, // 默认使用最新版本
+                    },
+                    salt: salt.to_vec(),
+                    iterations: *iterations,
+                    memory: *memory,
+                    parallelism: *parallelism,
+                    variant: *variant,
+                })
+            }
+        }
+    }
+}
+
+pub struct Kdbx4Header {
+    pub encryption_algorithm: EncryptionAlgorithm,
+    pub compression_config: CompressionConfig,
+    pub master_salt_seed: [u8; 32],
+    pub encryption_iv: Vec<u8>,
+    pub kdf_parameters: KdfConfig,
+    pub public_custom_data: Option<VariantDictionary>,
 }
 
 impl Kdbx4Header {
-    pub fn parse(cursor: &mut Cursor<&[u8]>) -> Result<Self, KdbxFileError> {
-        let mut entity = Kdbx4Header {
-            encryption_algorithm: None,
-            compression_config: None,
-            master_salt_seed: None,
-            encryption_iv: None,
-            kdf_parameters: None,
-            public_custom_data: None,
-        };
+    pub fn parse(reader: &[u8]) -> Result<(Self, usize), Kdbx4HeaderError> {
+        let mut encryption_algorithm: Option<EncryptionAlgorithm> = None;
+        let mut compression_config: Option<CompressionConfig> = None;
+        let mut master_salt_seed: Option<[u8; 32]> = None;
+        let mut encryption_iv: Option<Vec<u8>> = None;
+        let mut kdf_parameters: Option<KdfConfig> = None;
+        let mut public_custom_data: Option<VariantDictionary> = None;
+
+        let reader = &mut Cursor::new(reader);
+        reader
+            .seek(SeekFrom::Start(12))
+            .map_err(|_| Kdbx4HeaderError::InvalidHeader)?;
 
         loop {
-            let hf_type = cursor.read_u8().map_err(|_| KdbxFileError::InvalidHeader)?;
-            let hf_size = cursor
+            let hf_type = reader
+                .read_u8()
+                .map_err(|_| Kdbx4HeaderError::InvalidHeader)?;
+            let hf_size = reader
                 .read_u32::<LittleEndian>()
-                .map_err(|_| KdbxFileError::InvalidHeader)? as usize;
-            let hf_buffer = cursor
+                .map_err(|_| Kdbx4HeaderError::InvalidHeader)? as usize;
+            let hf_buffer = reader
                 .read_slice(hf_size)
-                .map_err(|_| KdbxFileError::InvalidHeader)?;
+                .map_err(|_| Kdbx4HeaderError::InvalidHeader)?;
 
             match hf_type {
                 HEADER_END => {
                     break;
                 }
                 HEADER_ENCRYPTION_ALGORITHM => {
-                    entity.encryption_algorithm =
-                        Some(EncryptionAlgorithm::try_from(hf_buffer)?);
+                    encryption_algorithm = Some(EncryptionAlgorithm::try_from(hf_buffer)?);
                 }
                 HEADER_COMPRESSION_ALGORITHM => {
-                    entity.compression_config = Some(CompressionConfig::try_from(
-                        LittleEndian::read_u32(&hf_buffer),
-                    )?)
+                    compression_config = Some(CompressionConfig::try_from(LittleEndian::read_u32(
+                        &hf_buffer,
+                    ))?)
                 }
                 HEADER_MASTER_SEED => {
                     if hf_buffer.len() != 32 {
-                        return Err(KdbxFileError::InvalidHeader);
+                        return Err(Kdbx4HeaderError::InvalidHeader);
                     }
-                    entity.master_salt_seed = Some(hf_buffer[..32].try_into().unwrap());
+                    master_salt_seed = Some(hf_buffer[..32].try_into().unwrap());
                 }
                 HEADER_ENCRYPTION_IV => {
-                    entity.encryption_iv = Some(hf_buffer.to_vec());
+                    encryption_iv = Some(hf_buffer.to_vec());
                 }
                 HEADER_KDF_PARAMETERS => {
                     let vd = VariantDictionary::parse(&hf_buffer)
-                        .map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
-                    let kdf =
-                        parse_kdf_keys(&vd).map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
-                    entity.kdf_parameters = Some(kdf);
+                        .map_err(|_| Kdbx4HeaderError::InvalidVariantDictionary)?;
+                    let kdf = parse_kdf_keys(&vd)
+                        .map_err(|_| Kdbx4HeaderError::InvalidVariantDictionary)?;
+                    kdf_parameters = Some(kdf);
                 }
 
                 HEADER_PUBLIC_CUSTOM_DATA => {
                     let vd = VariantDictionary::parse(&hf_buffer)
-                        .map_err(|_| KdbxFileError::InvalidVariantDictionary)?;
-                    entity.public_custom_data = Some(vd);
+                        .map_err(|_| Kdbx4HeaderError::InvalidVariantDictionary)?;
+                    public_custom_data = Some(vd);
                 }
                 _ => {
-                    return Err(KdbxFileError::InvalidHeader);
+                    return Err(Kdbx4HeaderError::InvalidHeader);
                 }
             }
         }
 
-        Ok(entity)
+        Ok((
+            Kdbx4Header {
+                encryption_algorithm: encryption_algorithm
+                    .ok_or(Kdbx4HeaderError::InvalidHeader)?,
+                compression_config: compression_config.ok_or(Kdbx4HeaderError::InvalidHeader)?,
+                master_salt_seed: master_salt_seed.ok_or(Kdbx4HeaderError::InvalidHeader)?,
+                encryption_iv: encryption_iv.ok_or(Kdbx4HeaderError::InvalidHeader)?,
+                kdf_parameters: kdf_parameters.ok_or(Kdbx4HeaderError::InvalidHeader)?,
+                public_custom_data,
+            },
+            reader.position() as usize,
+        ))
     }
 }
 
@@ -171,12 +229,21 @@ fn parse_kdf_keys(vd: &VariantDictionary) -> anyhow::Result<KdfConfig> {
         let memory: &u64 = vd.get("M")?;
         let parallelism: &u32 = vd.get("P")?;
 
+        if version != &0x10 && version != &0x13 {
+            return Err(anyhow!("不支持的Argon2版本"));
+        }
+
         Ok(KdfConfig::Argon2 {
             version: *version,
             salt: salt[..].into(),
             iterations: *iterations,
             memory: *memory,
             parallelism: *parallelism,
+            variant: if uuid == &KDF_ARGON2D {
+                argon2::Variant::Argon2d
+            } else {
+                argon2::Variant::Argon2id
+            },
         })
     } else {
         Err(anyhow!(""))

@@ -1,7 +1,6 @@
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
-
-use crate::kdbx::error::KdbxFileError;
+use thiserror::Error;
 
 const KDBX_IDENTIFIER: [u8; 4] = [0x03, 0xd9, 0xa2, 0x9a];
 const KDBX_HEADER_SIZE: usize = 12;
@@ -20,16 +19,33 @@ pub enum KdbxVersion {
     KDB4(u16),
 }
 
+#[derive(Debug, Error)]
+pub enum KdbxHeaderError {
+    #[error("Invalid KDBX magic number")]
+    InvalidMagicNumber,
+    #[error(
+        "Invalid KDBX version: {}.{}.{}",
+        version,
+        file_major_version,
+        file_minor_version
+    )]
+    InvalidKDBXVersion {
+        version: u32,
+        file_major_version: u16,
+        file_minor_version: u16,
+    },
+}
+
 impl KdbxVersion {
-    pub fn parse(data: &[u8]) -> Result<Self, KdbxFileError> {
+    pub fn parse(data: &[u8]) -> Result<Self, KdbxHeaderError> {
         if data.len() < KDBX_HEADER_SIZE {
-            return Err(KdbxFileError::InvalidMagicNumber);
+            return Err(KdbxHeaderError::InvalidMagicNumber);
         }
 
         if data[..4] != KDBX_IDENTIFIER {
-            return Err(KdbxFileError::InvalidMagicNumber);
+            return Err(KdbxHeaderError::InvalidMagicNumber);
         }
-        
+
         let version = LittleEndian::read_u32(&data[4..8]);
         let file_minor_version = LittleEndian::read_u16(&data[8..10]);
         let file_major_version = LittleEndian::read_u16(&data[10..12]);
@@ -44,7 +60,7 @@ impl KdbxVersion {
                 KdbxVersion::KDB4(file_major_version)
             }
             _ => {
-                return Err(KdbxFileError::InvalidKDBXVersion {
+                return Err(KdbxHeaderError::InvalidKDBXVersion {
                     version,
                     file_major_version,
                     file_minor_version,

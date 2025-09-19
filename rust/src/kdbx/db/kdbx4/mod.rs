@@ -1,2 +1,2 @@
 mod kdbx4;
-mod kdbx4_header;
+pub mod kdbx4_header;
