@@ -2,7 +2,12 @@ use crate::crypto;
 use crate::kdbx::db::kdbx::Kdbx;
 use crate::kdbx::db::kdbx4::kdbx4_header::Kdbx4Header;
 use crate::kdbx::keys::KdbxKey;
+use crate::utils::cursor_utils::CursorExt;
+use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
+use generic_array::typenum::U64;
+use generic_array::GenericArray;
 use hex_literal::hex;
+use std::io::{Cursor, Read};
 
 pub struct Kdbx4 {}
 
@@ -37,8 +42,50 @@ impl Kdbx4 {
             return Err(anyhow::anyhow!("Header HMAC checksum mismatch"));
         }
 
+        let payload_encrypted = parse_hmac_block(&data[header_end_pos + 64..], &hmac_key);
+
         Ok(Kdbx4 {})
     }
+}
+
+fn parse_hmac_block(data: &[u8], hmac_key: &GenericArray<u8, U64>) -> anyhow::Result<Vec<u8>> {
+    let mut total_block: Vec<u8> = Vec::new();
+    let mut pos = 0;
+    let mut block_index: u64 = 0;
+
+    loop {
+        let block_hmac = &data[pos..pos + 32];
+        pos += 32;
+        let block_length_buf = &data[pos..pos + 4];
+        pos += 4;
+        let block_length = LittleEndian::read_u32(block_length_buf) as usize;
+        let block_data = &data[pos..pos + block_length];
+        pos += block_length;
+
+        let mut block_index_buf = [0u8; 8];
+        LittleEndian::write_u64(&mut block_index_buf, block_index);
+
+        let hmac_block_key =
+            crypto::hash::calculate_sha512_multiple(&[&block_index_buf, &hmac_key]);
+
+        if block_hmac
+            != crypto::hash::calculate_hmac_multiple(
+                &[&block_index_buf, &block_length_buf, &block_data],
+                &hmac_block_key,
+            )?
+            .as_slice()
+        {
+            return Err(anyhow::anyhow!("Block HMAC checksum mismatch"));
+        }
+
+        block_index += 1;
+        if block_length == 0 {
+            break;
+        }
+        total_block.extend_from_slice(block_data);
+    }
+
+    Ok(total_block)
 }
 
 #[cfg(test)]
