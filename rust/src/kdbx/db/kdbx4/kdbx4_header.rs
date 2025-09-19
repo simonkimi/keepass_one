@@ -1,4 +1,4 @@
-use crate::crypto;
+use crate::{crypto, kdbx};
 use crate::kdbx::db::variant_dictionary::VariantDictionary;
 use crate::utils::cursor_utils::CursorExt;
 use anyhow::anyhow;
@@ -46,6 +46,15 @@ impl TryFrom<u32> for CompressionConfig {
             0 => Ok(CompressionConfig::None),
             1 => Ok(CompressionConfig::GZip),
             _ => Err(Kdbx4HeaderError::InvalidHeader),
+        }
+    }
+}
+
+impl CompressionConfig {
+    pub fn get_compression(&self) -> Box<dyn kdbx::compression::Compression> {
+        match self {
+            CompressionConfig::None => Box::new(kdbx::compression::NoCompression {}),
+            CompressionConfig::GZip => Box::new(kdbx::compression::GZipCompression {}),
         }
     }
 }

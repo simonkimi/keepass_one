@@ -42,7 +42,7 @@ impl Kdbx4 {
             return Err(anyhow::anyhow!("Header HMAC checksum mismatch"));
         }
 
-        let payload_encrypted = parse_hmac_block(&data[header_end_pos + 64..], &hmac_key);
+        let payload_encrypted = parse_hmac_block(&data[header_end_pos + 64..], &hmac_key)?;
 
         Ok(Kdbx4 {})
     }
