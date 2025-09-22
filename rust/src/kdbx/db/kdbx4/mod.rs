@@ -1,2 +1,3 @@
 mod kdbx4;
-pub mod kdbx4_header;
+pub mod header;
+pub mod inner_header;

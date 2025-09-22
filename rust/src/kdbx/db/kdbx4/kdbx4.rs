@@ -1,7 +1,8 @@
 use crate::crypto;
 use crate::crypto::hash;
 use crate::kdbx::db::kdbx::Kdbx;
-use crate::kdbx::db::kdbx4::kdbx4_header::Kdbx4Header;
+use crate::kdbx::db::kdbx4::header::Kdbx4Header;
+use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
 use crate::kdbx::keys::KdbxKey;
 use byteorder::{ByteOrder, LittleEndian};
 use generic_array::typenum::U64;
@@ -57,6 +58,10 @@ impl Kdbx4 {
             .get_compression()
             .decompress(&payload_decrypted)?;
 
+        let inner_header = Kdbx4InnerHeader::parse(&payload_uncompressed)?;
+        let xml = &payload_uncompressed[inner_header.header_size..];
+
+        println!("xml: {}", String::from_utf8_lossy(xml));
         Ok(Kdbx4 {})
     }
 }

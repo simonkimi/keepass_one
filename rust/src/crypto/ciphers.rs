@@ -99,3 +99,29 @@ impl Cipher for ChaCha20Cipher {
         Ok(buf)
     }
 }
+
+pub struct Salsa20Cipher {
+    cipher: salsa20::Salsa20,
+}
+
+impl Salsa20Cipher {
+    pub fn new(key: &[u8], iv: &[u8]) -> Self {
+        let key = GenericArray::from_slice(key);
+        let nonce = GenericArray::from_slice(iv);
+        let cipher = salsa20::Salsa20::new(key, nonce);
+        Self { cipher }
+    }
+}
+
+impl Cipher for Salsa20Cipher {
+    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buffer = Vec::from(plaintext);
+        self.cipher.apply_keystream(&mut buffer);
+        Ok(buffer)
+    }
+    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buffer = Vec::from(ciphertext);
+        self.cipher.apply_keystream(&mut buffer);
+        Ok(buffer)
+    }
+}

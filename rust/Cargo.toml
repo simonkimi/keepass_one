@@ -14,7 +14,6 @@ byteorder = "1.5.0"
 hex-literal = "1.0.0"
 sxd-document = "0.3.2"
 sxd-xpath = "0.4.2"
-hex = "0.4.3"
 base64 = "0.22.1"
 sha2 = "0.10.9"
 aes = "0.8.4"
@@ -27,6 +26,8 @@ cipher = {version = "0.4.4", features = ["std"]}
 block-padding = "0.3.3"
 twofish = "0.7.1"
 chacha20 = "0.9.1"
+salsa20 = "0.10.2"
+hex = "0.4.3"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
