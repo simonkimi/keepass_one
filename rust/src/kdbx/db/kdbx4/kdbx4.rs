@@ -1,9 +1,9 @@
 use crate::crypto;
+use crate::crypto::hash;
 use crate::kdbx::db::kdbx::Kdbx;
 use crate::kdbx::db::kdbx4::kdbx4_header::Kdbx4Header;
 use crate::kdbx::keys::KdbxKey;
-use crate::utils::cursor_utils::CursorExt;
-use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
+use byteorder::{ByteOrder, LittleEndian};
 use generic_array::typenum::U64;
 use generic_array::GenericArray;
 use hex_literal::hex;
@@ -27,22 +27,35 @@ impl Kdbx4 {
         let key_hash = db_key.calc_key_hash()?;
         let transformed_key = header.kdf_parameters.get_kdf().transform_key(&key_hash)?;
 
-        let hmac_key = crypto::hash::calculate_sha512_multiple(&[
+        let hmac_key = hash::calculate_sha512_multiple(&[
             &header.master_salt_seed,
             &transformed_key,
             &hex!("01"),
         ]);
 
         let header_hmac_key =
-            crypto::hash::calculate_sha512_multiple(&[&hex!("FFFFFFFFFFFFFFFF"), &hmac_key]);
+            hash::calculate_sha512_multiple(&[&hex!("FFFFFFFFFFFFFFFF"), &hmac_key]);
 
         if header_hmac
-            != crypto::hash::calculate_hmac_multiple(&[&header_bytes], &header_hmac_key)?.as_slice()
+            != hash::calculate_hmac_multiple(&[&header_bytes], &header_hmac_key)?.as_slice()
         {
             return Err(anyhow::anyhow!("Header HMAC checksum mismatch"));
         }
 
         let payload_encrypted = parse_hmac_block(&data[header_end_pos + 64..], &hmac_key)?;
+
+        let master_key =
+            hash::calculate_sha256_multiple(&[&header.master_salt_seed, &transformed_key]);
+
+        let payload_decrypted = header
+            .encryption_algorithm
+            .get_cipher(&master_key, &header.encryption_iv)
+            .decrypt(&payload_encrypted)?;
+
+        let payload_uncompressed = header
+            .compression_config
+            .get_compression()
+            .decompress(&payload_decrypted)?;
 
         Ok(Kdbx4 {})
     }
@@ -65,11 +78,10 @@ fn parse_hmac_block(data: &[u8], hmac_key: &GenericArray<u8, U64>) -> anyhow::Re
         let mut block_index_buf = [0u8; 8];
         LittleEndian::write_u64(&mut block_index_buf, block_index);
 
-        let hmac_block_key =
-            crypto::hash::calculate_sha512_multiple(&[&block_index_buf, &hmac_key]);
+        let hmac_block_key = hash::calculate_sha512_multiple(&[&block_index_buf, &hmac_key]);
 
         if block_hmac
-            != crypto::hash::calculate_hmac_multiple(
+            != hash::calculate_hmac_multiple(
                 &[&block_index_buf, &block_length_buf, &block_data],
                 &hmac_block_key,
             )?

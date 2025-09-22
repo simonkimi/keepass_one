@@ -1,7 +1,7 @@
 use crate::crypto;
 use aes::Aes256;
 use block_padding::Pkcs7;
-use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
+use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, StreamCipher};
 use generic_array::GenericArray;
 
 pub trait Cipher {
@@ -74,22 +74,28 @@ impl Cipher for TwofishCipher {
     }
 }
 
-// struct ChaCha20Cipher {
-//     cipher: chacha20::ChaCha20,
-// }
-//
-// impl ChaCha20Cipher {
-//     pub fn new(key: &[u8]) -> Self {
-//         let iv = crypto::hash::calculate_sha512(&key);
-//         let key = GenericArray::from_slice(&iv[0..32]);
-//         let nonce = GenericArray::from_slice(&iv[32..44]);
-//         let cipher = chacha20::ChaCha20::new(key, nonce);
-//         Self { cipher }
-//     }
-//
-//     pub fn new_with_iv(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
-//         Ok(Self {
-//             cipher: chacha20::ChaCha20::new_from_slices(key, iv)?,
-//         })
-//     }
-// }
+pub struct ChaCha20Cipher {
+    cipher: chacha20::ChaCha20,
+}
+
+impl ChaCha20Cipher {
+    pub fn new(key: &[u8], iv: &[u8]) -> Self {
+        let key = GenericArray::from_slice(key);
+        let nonce = GenericArray::from_slice(iv);
+        let cipher = chacha20::ChaCha20::new(key, nonce);
+        Self { cipher }
+    }
+}
+
+impl Cipher for ChaCha20Cipher {
+    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buf = plaintext.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
+    }
+    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buf = ciphertext.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
+    }
+}

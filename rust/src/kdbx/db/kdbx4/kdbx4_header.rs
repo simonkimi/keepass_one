@@ -1,6 +1,7 @@
-use crate::{crypto, kdbx};
+use crate::crypto::ciphers::{AES256Cipher, ChaCha20Cipher, Cipher, TwofishCipher};
 use crate::kdbx::db::variant_dictionary::VariantDictionary;
 use crate::utils::cursor_utils::CursorExt;
+use crate::{crypto, kdbx};
 use anyhow::anyhow;
 use byteorder::ByteOrder;
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -77,6 +78,16 @@ impl TryFrom<&[u8]> for EncryptionAlgorithm {
             Ok(EncryptionAlgorithm::Twofish)
         } else {
             Err(Kdbx4HeaderError::InvalidHeader)
+        }
+    }
+}
+
+impl EncryptionAlgorithm {
+    pub fn get_cipher(&self, key: &[u8], iv: &[u8]) -> Box<dyn Cipher> {
+        match self {
+            EncryptionAlgorithm::Aes256 => Box::new(AES256Cipher::new(key, iv)),
+            EncryptionAlgorithm::ChaCha20 => Box::new(ChaCha20Cipher::new(key, iv)),
+            EncryptionAlgorithm::Twofish => Box::new(TwofishCipher::new(key, iv)),
         }
     }
 }

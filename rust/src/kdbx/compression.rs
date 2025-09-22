@@ -4,8 +4,8 @@ use flate2::Compression as Flate2Compression;
 use std::io::{Read, Write};
 
 pub trait Compression {
-    fn compress(&self, in_buffer: &[u8]) -> Result<Vec<u8>, std::io::Error>;
-    fn decompress(&self, in_buffer: &[u8]) -> Result<Vec<u8>, std::io::Error>;
+    fn compress(&self, data: &[u8]) -> Result<Vec<u8>, std::io::Error>;
+    fn decompress(&self, data: &[u8]) -> Result<Vec<u8>, std::io::Error>;
 }
 
 pub struct NoCompression;
