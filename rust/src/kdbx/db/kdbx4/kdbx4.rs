@@ -61,7 +61,7 @@ impl Kdbx4 {
         let inner_header = Kdbx4InnerHeader::parse(&payload_uncompressed)?;
         let xml = &payload_uncompressed[inner_header.header_size..];
 
-        println!("xml: {}", String::from_utf8_lossy(xml));
+        println!("{}", String::from_utf8_lossy(xml));
         Ok(Kdbx4 {})
     }
 }

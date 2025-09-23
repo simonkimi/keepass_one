@@ -25,7 +25,7 @@ impl CursorExt for Cursor<&[u8]> {
         self.seek(SeekFrom::Current(len as i64))?;
         Ok(slice)
     }
-    
+
     fn remaining(&self) -> usize {
         self.get_ref().len() - self.position() as usize
     }
