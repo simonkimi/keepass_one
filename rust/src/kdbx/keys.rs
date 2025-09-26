@@ -2,10 +2,12 @@ use crate::crypto;
 use crate::crypto::hash::calculate_sha256;
 use base64::Engine;
 use generic_array::{typenum::U32, GenericArray};
+use secrecy::{ExposeSecret, SecretBox, SecretSlice};
 use std::io::Read;
 use sxd_document::parser;
 use sxd_xpath::evaluate_xpath;
 use thiserror::Error;
+use zeroize::Zeroize;
 
 #[derive(Debug, Error)]
 pub enum KdbxKeyError {
@@ -16,8 +18,8 @@ pub enum KdbxKeyError {
 }
 
 pub struct KdbxKey {
-    pub master_key: Option<String>,
-    pub key_file: Option<Vec<u8>>,
+    pub master_key: Option<SecretBox<String>>,
+    pub key_file: Option<SecretSlice<u8>>,
 }
 
 pub type KeyElement = Vec<u8>;
@@ -31,13 +33,13 @@ impl KdbxKey {
     }
 
     pub fn add_master_key(&mut self, key: &str) {
-        self.master_key = Some(key.to_string());
+        self.master_key = Some(SecretBox::new(Box::new(key.to_string())));
     }
 
     pub fn add_key_file(&mut self, key_file: &mut dyn Read) -> Result<(), std::io::Error> {
         let mut buf = Vec::new();
         key_file.read_to_end(&mut buf)?;
-        self.key_file = Some(buf);
+        self.key_file = Some(SecretSlice::from(buf));
         Ok(())
     }
 
@@ -49,13 +51,13 @@ impl KdbxKey {
         let mut key_parts: Vec<Vec<u8>> = Vec::new();
 
         if let Some(ref master_key) = self.master_key {
-            let master_key_hash = calculate_sha256(master_key.as_bytes());
+            let master_key_hash = calculate_sha256(master_key.expose_secret().as_bytes());
             key_parts.push(master_key_hash.to_vec());
         }
 
         if let Some(ref key_file_buf) = self.key_file {
             key_parts.push(
-                try_parse_keyfile(key_file_buf)
+                try_parse_keyfile(key_file_buf.expose_secret())
                     .ok_or_else(|| KdbxKeyError::FailedToParseKeyFile)?,
             );
         }
@@ -64,9 +66,11 @@ impl KdbxKey {
             return Err(KdbxKeyError::NoKeyParts);
         }
 
-        Ok(crypto::hash::calculate_sha256_multiple(
+        let result = Ok(crypto::hash::calculate_sha256_multiple(
             &key_parts.iter().map(Vec::as_slice).collect::<Vec<&[u8]>>(),
-        ))
+        ));
+        key_parts.zeroize();
+        result
     }
 }
 

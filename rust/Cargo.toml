@@ -29,7 +29,12 @@ chacha20 = "0.9.1"
 salsa20 = "0.10.2"
 hex = "0.4.3"
 serde = { version = "1.0.226", features = ["derive"] }
+quick-xml = { version = "0.36.0", features = ["serialize", "overlapped-lists"] }
+uuid = { version = "1.10.0", features = ["serde", "v4"] }
 chrono = { version = "0.4.42", features = ["serde"] }
+secrecy = "0.10.3"
+zeroize = "1.8.1"
+serde_with = { version = "3.9.0", features = ["macros"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
