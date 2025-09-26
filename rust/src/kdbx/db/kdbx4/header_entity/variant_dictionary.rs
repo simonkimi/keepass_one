@@ -1,7 +1,6 @@
-use anyhow::anyhow;
-use byteorder::ByteOrder;
+use byteorder::{ByteOrder, WriteBytesExt};
 use byteorder::{LittleEndian, ReadBytesExt};
-use std::{collections::HashMap, io::Cursor};
+use std::{collections::HashMap, io::Cursor, io::Write};
 
 use crate::utils::cursor_utils::CursorExt;
 
@@ -16,14 +15,18 @@ const STR_TYPE_ID: u8 = 0x18;
 const BYTES_TYPE_ID: u8 = 0x42;
 
 pub struct VariantDictionary {
-    data: HashMap<String, VariantDictionaryValue>,
+    items: HashMap<String, VariantDictionaryValue>,
 }
 
 impl VariantDictionary {
     pub fn new() -> Self {
         Self {
-            data: HashMap::new(),
+            items: HashMap::new(),
         }
+    }
+
+    pub fn from(items: HashMap<String, VariantDictionaryValue>) -> Self {
+        Self { items }
     }
 
     pub fn parse(data: &[u8]) -> anyhow::Result<Self> {
@@ -40,10 +43,10 @@ impl VariantDictionary {
             if value_type == 0 {
                 break;
             }
-            let name_size = cursor.read_i32::<LittleEndian>()? as usize;
+            let name_size = cursor.read_u32::<LittleEndian>()? as usize;
             let name_buffer = cursor.read_slice(name_size)?;
             let name = String::from_utf8_lossy(name_buffer).to_string();
-            let value_size = cursor.read_i32::<LittleEndian>()? as usize;
+            let value_size = cursor.read_u32::<LittleEndian>()? as usize;
             let value_buf = cursor.read_slice(value_size)?;
 
             let value = match value_type {
@@ -66,7 +69,7 @@ impl VariantDictionary {
             data.insert(name.to_string(), value);
         }
 
-        Ok(Self { data })
+        Ok(Self { items: data })
     }
 
     pub fn get<'a, T: 'a>(&'a self, key: &str) -> anyhow::Result<&'a T>
@@ -74,11 +77,72 @@ impl VariantDictionary {
         &'a VariantDictionaryValue: Into<Option<&'a T>>,
     {
         let entity = self
-            .data
+            .items
             .get(key)
             .ok_or(anyhow::anyhow!("未找到对应的key"))?;
 
         entity.into().ok_or_else(|| anyhow::anyhow!("类型不匹配"))
+    }
+
+    pub fn write(&self) -> Vec<u8> {
+        let mut cursor = Cursor::new(Vec::new());
+        cursor
+            .write_u16::<LittleEndian>(VARIANT_DICTIONARY_VERSION)
+            .unwrap();
+
+        for (key, value) in &self.items {
+            let type_id = match value {
+                VariantDictionaryValue::UInt32(_) => U32_TYPE_ID,
+                VariantDictionaryValue::UInt64(_) => U64_TYPE_ID,
+                VariantDictionaryValue::Bool(_) => BOOL_TYPE_ID,
+                VariantDictionaryValue::Int32(_) => I32_TYPE_ID,
+                VariantDictionaryValue::Int64(_) => I64_TYPE_ID,
+                VariantDictionaryValue::String(_) => STR_TYPE_ID,
+                VariantDictionaryValue::ByteArray(_) => BYTES_TYPE_ID,
+            };
+            cursor.write_u8(type_id).unwrap();
+
+            cursor.write_u32::<LittleEndian>(key.len() as u32).unwrap();
+            cursor.write_all(key.as_bytes()).unwrap();
+
+            match value {
+                VariantDictionaryValue::UInt32(v) => {
+                    cursor.write_u32::<LittleEndian>(4).unwrap();
+                    cursor.write_u32::<LittleEndian>(*v).unwrap();
+                }
+                VariantDictionaryValue::UInt64(v) => {
+                    cursor.write_u32::<LittleEndian>(8).unwrap();
+                    cursor.write_u64::<LittleEndian>(*v).unwrap();
+                }
+                VariantDictionaryValue::Bool(v) => {
+                    cursor.write_u32::<LittleEndian>(1).unwrap();
+                    cursor.write_u8(if *v { 1 } else { 0 }).unwrap();
+                }
+                VariantDictionaryValue::Int32(v) => {
+                    cursor.write_u32::<LittleEndian>(4).unwrap();
+                    cursor.write_i32::<LittleEndian>(*v).unwrap();
+                }
+                VariantDictionaryValue::Int64(v) => {
+                    cursor.write_u32::<LittleEndian>(8).unwrap();
+                    cursor.write_i64::<LittleEndian>(*v).unwrap();
+                }
+                VariantDictionaryValue::String(v) => {
+                    let bytes = v.as_bytes();
+                    cursor
+                        .write_u32::<LittleEndian>(bytes.len() as u32)
+                        .unwrap();
+                    cursor.write_all(bytes).unwrap();
+                }
+                VariantDictionaryValue::ByteArray(v) => {
+                    cursor.write_u32::<LittleEndian>(v.len() as u32).unwrap();
+                    cursor.write_all(v).unwrap();
+                }
+            }
+        }
+
+        cursor.write_u8(0).unwrap();
+
+        cursor.into_inner()
     }
 }
 
@@ -195,5 +259,39 @@ impl<'a> From<&'a VariantDictionaryValue> for Option<&'a Vec<u8>> {
             VariantDictionaryValue::ByteArray(v) => Some(v),
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_write_and_parse() {
+        let mut items = HashMap::new();
+        items.insert("u32".to_string(), VariantDictionaryValue::UInt32(123));
+        items.insert("u64".to_string(), VariantDictionaryValue::UInt64(456));
+        items.insert("bool_true".to_string(), VariantDictionaryValue::Bool(true));
+        items.insert(
+            "bool_false".to_string(),
+            VariantDictionaryValue::Bool(false),
+        );
+        items.insert("i32".to_string(), VariantDictionaryValue::Int32(-123));
+        items.insert("i64".to_string(), VariantDictionaryValue::Int64(-456));
+        items.insert(
+            "string".to_string(),
+            VariantDictionaryValue::String("hello".to_string()),
+        );
+        items.insert(
+            "bytes".to_string(),
+            VariantDictionaryValue::ByteArray(vec![1, 2, 3]),
+        );
+
+        let vd = VariantDictionary::from(items);
+
+        let written_data = vd.write();
+        let parsed_vd = VariantDictionary::parse(&written_data).unwrap();
+
+        assert_eq!(vd.items, parsed_vd.items);
     }
 }
