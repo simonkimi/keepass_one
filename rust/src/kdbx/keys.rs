@@ -22,8 +22,6 @@ pub struct KdbxKey {
     pub key_file: Option<SecretSlice<u8>>,
 }
 
-pub type KeyElement = Vec<u8>;
-
 impl KdbxKey {
     pub fn new() -> Self {
         KdbxKey {

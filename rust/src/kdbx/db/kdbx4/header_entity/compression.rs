@@ -1,9 +1,11 @@
 use crate::kdbx::{self, db::kdbx4::errors::Kdbx4HeaderError};
 use hex_literal::hex;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const COMPRESSION_CONFIG_NONE: [u8; 4] = hex!("00000000");
 const COMPRESSION_CONFIG_GZIP: [u8; 4] = hex!("01000000");
 
+#[derive(Zeroize, ZeroizeOnDrop)]
 pub enum CompressionConfig {
     None,
     GZip,

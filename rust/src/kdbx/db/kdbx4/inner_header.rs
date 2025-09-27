@@ -1,65 +1,38 @@
+use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
+use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::InnerEncryptionAlgorithm;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const INNER_HEADER_END_OF_HEADER: u8 = 0x00;
 pub const INNER_HEADER_INNER_ENCRYPTION_ALGORITHM: u8 = 0x01;
 pub const INNER_HEADER_INNER_ENCRYPTION_KEY: u8 = 0x02;
 pub const INNER_HEADER_BINARY_CONTENT: u8 = 0x03;
 
-pub enum InnerEncryptionAlgorithm {
-    Salsa20,
-    ChaCha20,
-}
-
-impl TryFrom<u32> for InnerEncryptionAlgorithm {
-    type Error = anyhow::Error;
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value {
-            2 => Ok(InnerEncryptionAlgorithm::Salsa20),
-            3 => Ok(InnerEncryptionAlgorithm::ChaCha20),
-            _ => Err(anyhow::anyhow!(
-                "Unknown inner encryption algorithm: {}",
-                value
-            )),
-        }
-    }
-}
-
+#[derive(Zeroize, ZeroizeOnDrop)]
 pub struct Kdbx4InnerHeader {
     pub inner_encryption_algorithm: InnerEncryptionAlgorithm,
     pub inner_encryption_key: Vec<u8>,
-    pub binary_content: Vec<Kdbx4BinaryContent>,
+    pub binary_content: Vec<BinaryContent>,
     pub header_size: usize,
 }
 
-pub struct Kdbx4BinaryContent {
-    pub flag: u8,
-    pub content: Vec<u8>,
-}
+impl TryFrom<&[u8]> for Kdbx4InnerHeader {
+    type Error = anyhow::Error;
 
-impl From<&[u8]> for Kdbx4BinaryContent {
-    fn from(data: &[u8]) -> Self {
-        let flag = data[0];
-        let content = data[1..].to_vec();
-        Self { flag, content }
-    }
-}
-
-impl Kdbx4InnerHeader {
-    pub fn parse(data: &[u8]) -> anyhow::Result<Self> {
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut pos = 0;
 
         let mut inner_encryption_algorithm: Option<InnerEncryptionAlgorithm> = None;
         let mut inner_encryption_key: Option<Vec<u8>> = None;
-        let mut binary_content_vec: Vec<Kdbx4BinaryContent> = Vec::new();
+        let mut binary_content_vec: Vec<BinaryContent> = Vec::new();
 
         loop {
-            let header_type = data[pos];
+            let header_type = value[pos];
             pos += 1;
-            let header_size = LittleEndian::read_u32(&data[pos..pos + 4]);
+            let header_size = LittleEndian::read_u32(&value[pos..pos + 4]);
             pos += 4;
-            let header_data = &data[pos..pos + header_size as usize];
+            let header_data = &value[pos..pos + header_size as usize];
             pos += header_size as usize;
 
             match header_type {
@@ -73,7 +46,7 @@ impl Kdbx4InnerHeader {
                     inner_encryption_key = Some(header_data.to_vec());
                 }
                 INNER_HEADER_BINARY_CONTENT => {
-                    let binary_content = Kdbx4BinaryContent::from(header_data);
+                    let binary_content = BinaryContent::from(header_data);
                     binary_content_vec.push(binary_content);
                 }
                 _ => {

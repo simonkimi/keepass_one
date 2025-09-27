@@ -1,6 +1,7 @@
 use byteorder::{ByteOrder, WriteBytesExt};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{collections::HashMap, io::Cursor, io::Write};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::utils::cursor_utils::CursorExt;
 
@@ -18,36 +19,28 @@ pub struct VariantDictionary {
     items: HashMap<String, VariantDictionaryValue>,
 }
 
-impl VariantDictionary {
-    pub fn new() -> Self {
-        Self {
-            items: HashMap::new(),
-        }
-    }
+impl TryFrom<&[u8]> for VariantDictionary {
+    type Error = anyhow::Error;
 
-    pub fn from(items: HashMap<String, VariantDictionaryValue>) -> Self {
-        Self { items }
-    }
-
-    pub fn parse(data: &[u8]) -> anyhow::Result<Self> {
-        let mut cursor = Cursor::new(data);
-        let version = cursor.read_u16::<LittleEndian>()?;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let mut reader = Cursor::new(value);
+        let version = reader.read_u16::<LittleEndian>()?;
         if version != VARIANT_DICTIONARY_VERSION {
             return Err(anyhow::anyhow!("Invalid variant dictionary version"));
         }
 
         let mut data = HashMap::new();
 
-        while cursor.remaining() > 0 {
-            let value_type = cursor.read_u8()?;
+        while reader.remaining() > 0 {
+            let value_type = reader.read_u8()?;
             if value_type == 0 {
                 break;
             }
-            let name_size = cursor.read_u32::<LittleEndian>()? as usize;
-            let name_buffer = cursor.read_slice(name_size)?;
+            let name_size = reader.read_u32::<LittleEndian>()? as usize;
+            let name_buffer = reader.read_slice(name_size)?;
             let name = String::from_utf8_lossy(name_buffer).to_string();
-            let value_size = cursor.read_u32::<LittleEndian>()? as usize;
-            let value_buf = cursor.read_slice(value_size)?;
+            let value_size = reader.read_u32::<LittleEndian>()? as usize;
+            let value_buf = reader.read_slice(value_size)?;
 
             let value = match value_type {
                 U32_TYPE_ID => VariantDictionaryValue::UInt32(LittleEndian::read_u32(value_buf)),
@@ -70,6 +63,18 @@ impl VariantDictionary {
         }
 
         Ok(Self { items: data })
+    }
+}
+
+impl VariantDictionary {
+    pub fn new() -> Self {
+        Self {
+            items: HashMap::new(),
+        }
+    }
+
+    pub fn from(items: HashMap<String, VariantDictionaryValue>) -> Self {
+        Self { items }
     }
 
     pub fn get<'a, T: 'a>(&'a self, key: &str) -> anyhow::Result<&'a T>
@@ -146,7 +151,7 @@ impl VariantDictionary {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Zeroize, ZeroizeOnDrop)]
 pub enum VariantDictionaryValue {
     UInt32(u32),
     UInt64(u64),
@@ -290,7 +295,7 @@ mod tests {
         let vd = VariantDictionary::from(items);
 
         let written_data = vd.write();
-        let parsed_vd = VariantDictionary::parse(&written_data).unwrap();
+        let parsed_vd = VariantDictionary::try_from(&written_data[..]).unwrap();
 
         assert_eq!(vd.items, parsed_vd.items);
     }

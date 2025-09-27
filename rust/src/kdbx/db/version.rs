@@ -2,15 +2,15 @@ use byteorder::ByteOrder;
 use byteorder::LittleEndian;
 use thiserror::Error;
 
-const KDBX_IDENTIFIER: [u8; 4] = [0x03, 0xd9, 0xa2, 0x9a];
+pub const KDBX_IDENTIFIER: [u8; 4] = [0x03, 0xd9, 0xa2, 0x9a];
 const KDBX_HEADER_SIZE: usize = 12;
 
 const KEEPASS_1_ID: u32 = 0xb54bfb65;
 const KEEPASS_2_ID: u32 = 0xb54bfb66;
-const KEEPASS_LATEST_ID: u32 = 0xb54bfb67;
+pub const KEEPASS_LATEST_ID: u32 = 0xb54bfb67;
 
 const KDBX3_MAJOR_VERSION: u16 = 3;
-const KDBX4_MAJOR_VERSION: u16 = 4;
+pub const KDBX4_MAJOR_VERSION: u16 = 4;
 
 pub enum KdbxVersion {
     KDB(u16),

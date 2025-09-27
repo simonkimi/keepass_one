@@ -7,6 +7,7 @@ use crate::{
     },
 };
 use hex_literal::hex;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const KDF_AES: [u8; 16] = hex!("C9D9F39A628A4460BF740D08C18A4FEA");
 const KDF_ARGON2D: [u8; 16] = hex!("EF636DDF8C29444B91F7A9A403E30A0C");
@@ -45,7 +46,7 @@ impl TryFrom<&[u8]> for KdfConfig {
     type Error = anyhow::Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let vd = VariantDictionary::parse(value)?;
+        let vd = VariantDictionary::try_from(value)?;
         let kdf = parse_kdf_keys(&vd)?;
         Ok(kdf)
     }

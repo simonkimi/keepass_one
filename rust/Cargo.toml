@@ -22,7 +22,7 @@ rust-argon2 = "3.0.0"
 hmac = "0.12.1"
 flate2 = "1.1.2"
 cbc = "0.1.2"
-cipher = {version = "0.4.4", features = ["std"]}
+cipher = { version = "0.4.4", features = ["std"] }
 block-padding = "0.3.3"
 twofish = "0.7.1"
 chacha20 = "0.9.1"
@@ -33,7 +33,7 @@ quick-xml = { version = "0.36.0", features = ["serialize", "overlapped-lists"] }
 uuid = { version = "1.10.0", features = ["serde", "v4"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 secrecy = "0.10.3"
-zeroize = "1.8.1"
+zeroize = { version = "1.8.1", features = ["derive"] }
 serde_with = { version = "3.9.0", features = ["macros"] }
 dashmap = "6.1.0"
 

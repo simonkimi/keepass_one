@@ -3,11 +3,13 @@ use crate::{
     kdbx::db::kdbx4::errors::Kdbx4HeaderError,
 };
 use hex_literal::hex;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const CIPHERSUITE_AES256: [u8; 16] = hex!("31C1F2E6BF714350BE5805216AFC5AFF");
 const CIPHERSUITE_CHACHA20: [u8; 16] = hex!("D6038A2B8B6F4CB5A524339A31DBB59A");
 const CIPHERSUITE_TWOFISH: [u8; 16] = hex!("AD68F29F576F4BB9A36AD47AF965346C");
 
+#[derive(Zeroize, ZeroizeOnDrop)]
 pub enum EncryptionAlgorithm {
     Aes256,
     ChaCha20,
