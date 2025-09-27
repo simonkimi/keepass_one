@@ -1,6 +1,7 @@
 use crate::{
     crypto::ciphers::{AES256Cipher, ChaCha20Cipher, Cipher, TwofishCipher},
     kdbx::db::kdbx4::errors::Kdbx4HeaderError,
+    utils::writer::Writable,
 };
 use hex_literal::hex;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -46,12 +47,18 @@ impl EncryptionAlgorithm {
             EncryptionAlgorithm::Twofish => Box::new(TwofishCipher::new(key, iv)),
         }
     }
+}
 
-    pub fn write(&self) -> &[u8] {
-        match self {
+impl Writable for EncryptionAlgorithm {
+    fn write<W: std::io::Write + std::io::Seek>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), std::io::Error> {
+        writer.write_all(match self {
             EncryptionAlgorithm::Aes256 => &CIPHERSUITE_AES256,
             EncryptionAlgorithm::ChaCha20 => &CIPHERSUITE_CHACHA20,
             EncryptionAlgorithm::Twofish => &CIPHERSUITE_TWOFISH,
-        }
+        })?;
+        Ok(())
     }
 }

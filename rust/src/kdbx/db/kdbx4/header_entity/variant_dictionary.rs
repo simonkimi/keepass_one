@@ -1,9 +1,9 @@
-use byteorder::{ByteOrder, WriteBytesExt};
+use byteorder::{ByteOrder, WriteBytesExt, LE};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{collections::HashMap, io::Cursor, io::Write};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use crate::utils::cursor_utils::CursorExt;
+use crate::utils::writer::Writable;
 
 const VARIANT_DICTIONARY_VERSION: u16 = 0x100;
 
@@ -23,24 +23,29 @@ impl TryFrom<&[u8]> for VariantDictionary {
     type Error = anyhow::Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let mut reader = Cursor::new(value);
-        let version = reader.read_u16::<LittleEndian>()?;
+        let mut pos: usize = 0;
+        let version = LE::read_u16(&value[pos..]);
+        pos += 2;
         if version != VARIANT_DICTIONARY_VERSION {
             return Err(anyhow::anyhow!("Invalid variant dictionary version"));
         }
 
         let mut data = HashMap::new();
 
-        while reader.remaining() > 0 {
-            let value_type = reader.read_u8()?;
+        while pos < value.len() {
+            let value_type = value[pos];
+            pos += 1;
             if value_type == 0 {
                 break;
             }
-            let name_size = reader.read_u32::<LittleEndian>()? as usize;
-            let name_buffer = reader.read_slice(name_size)?;
-            let name = String::from_utf8_lossy(name_buffer).to_string();
-            let value_size = reader.read_u32::<LittleEndian>()? as usize;
-            let value_buf = reader.read_slice(value_size)?;
+            let name_size = LE::read_u32(&value[pos..]) as usize;
+            pos += 4;
+            let name_buffer = &value[pos..pos + name_size];
+            pos += name_size;
+            let value_size = LE::read_u32(&value[pos..]) as usize;
+            pos += 4;
+            let value_buf = &value[pos..pos + value_size];
+            pos += value_size;
 
             let value = match value_type {
                 U32_TYPE_ID => VariantDictionaryValue::UInt32(LittleEndian::read_u32(value_buf)),
@@ -59,7 +64,7 @@ impl TryFrom<&[u8]> for VariantDictionary {
                     ));
                 }
             };
-            data.insert(name.to_string(), value);
+            data.insert(String::from_utf8_lossy(name_buffer).to_string(), value);
         }
 
         Ok(Self { items: data })
@@ -88,13 +93,11 @@ impl VariantDictionary {
 
         entity.into().ok_or_else(|| anyhow::anyhow!("类型不匹配"))
     }
+}
 
-    pub fn write(&self) -> Vec<u8> {
-        let mut cursor = Cursor::new(Vec::new());
-        cursor
-            .write_u16::<LittleEndian>(VARIANT_DICTIONARY_VERSION)
-            .unwrap();
-
+impl Writable for VariantDictionary {
+    fn write<W: Write + std::io::Seek>(&self, writer: &mut W) -> Result<(), std::io::Error> {
+        writer.write_u16::<LE>(VARIANT_DICTIONARY_VERSION)?;
         for (key, value) in &self.items {
             let type_id = match value {
                 VariantDictionaryValue::UInt32(_) => U32_TYPE_ID,
@@ -105,49 +108,43 @@ impl VariantDictionary {
                 VariantDictionaryValue::String(_) => STR_TYPE_ID,
                 VariantDictionaryValue::ByteArray(_) => BYTES_TYPE_ID,
             };
-            cursor.write_u8(type_id).unwrap();
-
-            cursor.write_u32::<LittleEndian>(key.len() as u32).unwrap();
-            cursor.write_all(key.as_bytes()).unwrap();
-
+            writer.write_u8(type_id)?;
+            writer.write_u32::<LE>(key.len() as u32)?;
+            writer.write_all(key.as_bytes())?;
             match value {
                 VariantDictionaryValue::UInt32(v) => {
-                    cursor.write_u32::<LittleEndian>(4).unwrap();
-                    cursor.write_u32::<LittleEndian>(*v).unwrap();
+                    writer.write_u32::<LE>(4)?;
+                    writer.write_u32::<LE>(*v)?;
                 }
                 VariantDictionaryValue::UInt64(v) => {
-                    cursor.write_u32::<LittleEndian>(8).unwrap();
-                    cursor.write_u64::<LittleEndian>(*v).unwrap();
+                    writer.write_u32::<LE>(8)?;
+                    writer.write_u64::<LE>(*v)?;
                 }
                 VariantDictionaryValue::Bool(v) => {
-                    cursor.write_u32::<LittleEndian>(1).unwrap();
-                    cursor.write_u8(if *v { 1 } else { 0 }).unwrap();
+                    writer.write_u32::<LE>(1)?;
+                    writer.write_u8(if *v { 1 } else { 0 })?;
                 }
                 VariantDictionaryValue::Int32(v) => {
-                    cursor.write_u32::<LittleEndian>(4).unwrap();
-                    cursor.write_i32::<LittleEndian>(*v).unwrap();
+                    writer.write_u32::<LE>(4)?;
+                    writer.write_i32::<LE>(*v)?;
                 }
                 VariantDictionaryValue::Int64(v) => {
-                    cursor.write_u32::<LittleEndian>(8).unwrap();
-                    cursor.write_i64::<LittleEndian>(*v).unwrap();
+                    writer.write_u32::<LE>(8)?;
+                    writer.write_i64::<LE>(*v)?;
                 }
                 VariantDictionaryValue::String(v) => {
                     let bytes = v.as_bytes();
-                    cursor
-                        .write_u32::<LittleEndian>(bytes.len() as u32)
-                        .unwrap();
-                    cursor.write_all(bytes).unwrap();
+                    writer.write_u32::<LE>(bytes.len() as u32)?;
+                    writer.write_all(bytes)?;
                 }
                 VariantDictionaryValue::ByteArray(v) => {
-                    cursor.write_u32::<LittleEndian>(v.len() as u32).unwrap();
-                    cursor.write_all(v).unwrap();
+                    writer.write_u32::<LE>(v.len() as u32)?;
+                    writer.write_all(v)?;
                 }
             }
         }
-
-        cursor.write_u8(0).unwrap();
-
-        cursor.into_inner()
+        writer.write_u8(0)?;
+        Ok(())
     }
 }
 
@@ -293,9 +290,11 @@ mod tests {
         );
 
         let vd = VariantDictionary::from(items);
+        let mut buffer = Vec::new();
+        let mut writer = Cursor::new(&mut buffer);
 
-        let written_data = vd.write();
-        let parsed_vd = VariantDictionary::try_from(&written_data[..]).unwrap();
+        vd.write(&mut writer).unwrap();
+        let parsed_vd = VariantDictionary::try_from(buffer.as_slice()).unwrap();
 
         assert_eq!(vd.items, parsed_vd.items);
     }

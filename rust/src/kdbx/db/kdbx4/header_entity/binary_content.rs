@@ -1,4 +1,7 @@
+use std::io::{Seek, Write};
 use zeroize::{Zeroize, ZeroizeOnDrop};
+use crate::utils::writer::Writable;
+use byteorder::WriteBytesExt;
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct BinaryContent {
@@ -11,5 +14,13 @@ impl From<&[u8]> for BinaryContent {
         let flag = data[0];
         let content = data[1..].to_vec();
         Self { flag, content }
+    }
+}
+
+impl Writable for BinaryContent {
+    fn write<W: Write + Seek>(&self, writer: &mut W) -> Result<(), std::io::Error> {
+        writer.write_u8(self.flag)?;
+        writer.write_all(&self.content)?;
+        Ok(())
     }
 }

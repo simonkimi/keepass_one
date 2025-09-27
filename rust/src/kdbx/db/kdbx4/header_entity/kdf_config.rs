@@ -5,6 +5,7 @@ use crate::{
     kdbx::db::kdbx4::header_entity::variant_dictionary::{
         VariantDictionary, VariantDictionaryValue,
     },
+    utils::writer::Writable,
 };
 use hex_literal::hex;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -82,8 +83,13 @@ impl KdfConfig {
             }
         }
     }
+}
 
-    pub fn write(&self) -> Vec<u8> {
+impl Writable for KdfConfig {
+    fn write<W: std::io::Write + std::io::Seek>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), std::io::Error> {
         let mut map: HashMap<String, VariantDictionaryValue> = HashMap::new();
         match self {
             KdfConfig::Aes { salt, rounds } => {
@@ -138,7 +144,8 @@ impl KdfConfig {
                 );
             }
         }
-        VariantDictionary::from(map).write()
+        VariantDictionary::from(map).write(writer)?;
+        Ok(())
     }
 }
 
@@ -186,6 +193,8 @@ fn parse_kdf_keys(vd: &VariantDictionary) -> anyhow::Result<KdfConfig> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
 
     #[test]
@@ -195,9 +204,10 @@ mod tests {
             rounds: 100,
         };
 
-        let data = kdf_config.write();
-        let kdf_config2 = KdfConfig::try_from(data.as_slice()).unwrap();
-
+        let mut buffer = Vec::new();
+        let mut writer = Cursor::new(&mut buffer);
+        kdf_config.write(&mut writer).unwrap();
+        let kdf_config2 = KdfConfig::try_from(&buffer[..]).unwrap();
         assert_eq!(kdf_config, kdf_config2);
     }
 
@@ -212,8 +222,10 @@ mod tests {
             variant: argon2::Variant::Argon2id,
         };
 
-        let data = kdf_config.write();
-        let kdf_config2 = KdfConfig::try_from(data.as_slice()).unwrap();
+        let mut buffer = Vec::new();
+        let mut writer = Cursor::new(&mut buffer);
+        kdf_config.write(&mut writer).unwrap();
+        let kdf_config2 = KdfConfig::try_from(&buffer[..]).unwrap();
 
         assert_eq!(kdf_config, kdf_config2);
     }

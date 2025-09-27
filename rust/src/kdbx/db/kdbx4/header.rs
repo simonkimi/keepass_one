@@ -4,8 +4,8 @@ use crate::kdbx::db::kdbx4::header_entity::encryption_algorithm::EncryptionAlgor
 use crate::kdbx::db::kdbx4::header_entity::kdf_config::KdfConfig;
 use crate::kdbx::db::kdbx4::header_entity::variant_dictionary::VariantDictionary;
 use crate::kdbx::db::version::{KDBX4_MAJOR_VERSION, KDBX_IDENTIFIER, KEEPASS_LATEST_ID};
-use crate::utils::cursor_utils::CursorExt;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt, LE};
+use crate::utils::writer::Writable;
+use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt, LE};
 use std::collections::HashMap;
 use std::io::{Cursor, Seek, SeekFrom, Write};
 
@@ -40,22 +40,15 @@ impl TryFrom<&[u8]> for Kdbx4Header {
         let mut public_custom_data: Option<VariantDictionary> = None;
         let mut unknown_header: HashMap<u8, Vec<u8>> = HashMap::new();
 
-        let reader = &mut Cursor::new(value);
-        reader
-            .seek(SeekFrom::Start(12))
-            .map_err(|_| Kdbx4HeaderError::InvalidHeader)?;
+        let mut pos: usize = 12;
 
         loop {
-            let hf_type = reader
-                .read_u8()
-                .map_err(|_| Kdbx4HeaderError::InvalidHeader)?;
-            let hf_size = reader
-                .read_u32::<LittleEndian>()
-                .map_err(|_| Kdbx4HeaderError::InvalidHeader)? as usize;
-            let hf_buffer = reader
-                .read_slice(hf_size)
-                .map_err(|_| Kdbx4HeaderError::InvalidHeader)?;
-
+            let hf_type = value[pos];
+            pos += 1;
+            let hf_size = LE::read_u32(&value[pos..]) as usize;
+            pos += 4;
+            let hf_buffer = &value[pos..pos + hf_size];
+            pos += hf_size;
             match hf_type {
                 HEADER_END => {
                     break;
@@ -101,60 +94,18 @@ impl TryFrom<&[u8]> for Kdbx4Header {
             kdf_parameters: kdf_parameters.ok_or(Kdbx4HeaderError::InvalidHeader)?,
             public_custom_data,
             unknown_header,
-            size: reader.position() as usize,
+            size: pos,
         })
     }
 }
 
-impl Kdbx4Header {
-    pub fn write(&self) -> anyhow::Result<Vec<u8>> {
-        let mut buffer = Vec::new();
-        let mut writer = Cursor::new(&mut buffer);
-
+impl Writable for Kdbx4Header {
+    fn write<W: Write + Seek>(&self, writer: &mut W) -> Result<(), std::io::Error> {
         // kdbx固定12字节头
         writer.write_all(&KDBX_IDENTIFIER)?;
         writer.write_u32::<LE>(KEEPASS_LATEST_ID)?;
         writer.write_u16::<LE>(1)?;
         writer.write_u16::<LE>(KDBX4_MAJOR_VERSION)?;
-
-        // 其他部分
-        write_header_field(
-            &mut writer,
-            HEADER_ENCRYPTION_ALGORITHM,
-            &self.encryption_algorithm.write(),
-        )?;
-        write_header_field(
-            &mut writer,
-            HEADER_COMPRESSION_ALGORITHM,
-            &self.compression_config.write(),
-        )?;
-        write_header_field(&mut writer, HEADER_MASTER_SEED, &self.master_salt_seed)?;
-        write_header_field(&mut writer, HEADER_ENCRYPTION_IV, &self.encryption_iv)?;
-        write_header_field(
-            &mut writer,
-            HEADER_KDF_PARAMETERS,
-            &self.kdf_parameters.write(),
-        )?;
-        if let Some(vd) = &self.public_custom_data {
-            write_header_field(&mut writer, HEADER_PUBLIC_CUSTOM_DATA, &vd.write())?;
-        }
-        for (hf_type, hf_buffer) in &self.unknown_header {
-            write_header_field(&mut writer, *hf_type, hf_buffer)?;
-        }
-
-        write_header_field(&mut writer, HEADER_END, &[])?;
-
-        Ok(buffer)
+        todo!("write other header fields");
     }
-}
-
-fn write_header_field<T: Write>(
-    writer: &mut T,
-    hf_type: u8,
-    hf_buffer: &[u8],
-) -> anyhow::Result<()> {
-    writer.write_u8(hf_type)?;
-    writer.write_u32::<LE>(hf_buffer.len() as u32)?;
-    writer.write_all(hf_buffer)?;
-    Ok(())
 }

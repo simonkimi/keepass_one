@@ -1,4 +1,7 @@
-use crate::kdbx::{self, db::kdbx4::errors::Kdbx4HeaderError};
+use crate::{
+    kdbx::{self, db::kdbx4::errors::Kdbx4HeaderError},
+    utils::writer::Writable,
+};
 use hex_literal::hex;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -38,11 +41,16 @@ impl CompressionConfig {
             CompressionConfig::GZip => Box::new(kdbx::compression::GZipCompression {}),
         }
     }
-
-    pub fn write(&self) -> &[u8] {
-        match self {
+}
+impl Writable for CompressionConfig {
+    fn write<W: std::io::Write + std::io::Seek>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), std::io::Error> {
+        writer.write_all(match self {
             CompressionConfig::None => &COMPRESSION_CONFIG_NONE,
             CompressionConfig::GZip => &COMPRESSION_CONFIG_GZIP,
-        }
+        })?;
+        Ok(())
     }
 }
