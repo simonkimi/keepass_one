@@ -1,7 +1,7 @@
+use crate::utils::writer::{FixedSize, Writable};
+use byteorder::WriteBytesExt;
 use std::io::{Seek, Write};
 use zeroize::{Zeroize, ZeroizeOnDrop};
-use crate::utils::writer::Writable;
-use byteorder::WriteBytesExt;
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct BinaryContent {
@@ -22,5 +22,11 @@ impl Writable for BinaryContent {
         writer.write_u8(self.flag)?;
         writer.write_all(&self.content)?;
         Ok(())
+    }
+}
+
+impl FixedSize for BinaryContent {
+    fn fix_size(&self) -> usize {
+        self.content.len() + size_of::<u8>()
     }
 }

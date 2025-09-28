@@ -1,23 +1,36 @@
 use std::io::SeekFrom;
 
+use byteorder::{WriteBytesExt, LE};
+
 pub trait Writable {
-    fn write<W: std::io::Write + std::io::Seek>(
+    fn write<W: std::io::Write + std::io::Seek + Sized>(
         &self,
         writer: &mut W,
     ) -> Result<(), std::io::Error>;
 }
 
-impl<W: std::io::Write + std::io::Seek> WriteSeekExt for W {}
+pub trait FixedSize {
+    fn fix_size(&self) -> usize;
+}
 
-pub trait WriteSeekExt: std::io::Write + std::io::Seek {
-    fn write_with_lenu32<F>(&mut self, write_fn: F) -> Result<(), std::io::Error>
-    where
-        F: FnOnce(&mut Self) -> Result<(), std::io::Error>,
+pub trait FixedSizeExt: std::io::Write + std::io::Seek + Sized {
+    fn write_fixed_size_data<T: FixedSize + Writable>(
+        &mut self,
+        data: &T,
+    ) -> Result<(), std::io::Error> {
+        self.write_u32::<LE>(data.fix_size() as u32)?;
+        data.write(self)?;
+        Ok(())
+    }
+}
+
+pub trait WritableExt: std::io::Write + std::io::Seek + Sized {
+    fn write_with_calculated_length<T: Writable>(&mut self, data: &T) -> Result<(), std::io::Error>
     {
         let len_field_pos = self.stream_position()?;
         self.seek(SeekFrom::Current(4))?;
         let data_start = self.stream_position()?;
-        write_fn(self)?;
+        data.write(self)?;
         let data_end = self.stream_position()?;
         let data_len = data_end - data_start;
         if data_len > u32::MAX as u64 {
@@ -31,4 +44,13 @@ pub trait WriteSeekExt: std::io::Write + std::io::Seek {
         self.seek(SeekFrom::Start(data_end))?;
         Ok(())
     }
+
+    fn write_bytes_with_length(&mut self, data: &[u8]) -> Result<(), std::io::Error> {
+        self.write_u32::<LE>(data.len() as u32)?;
+        self.write_all(data)?;
+        Ok(())
+    }
 }
+
+impl<W: std::io::Write + std::io::Seek> WritableExt for W {}
+impl<W: std::io::Write + std::io::Seek + Sized> FixedSizeExt for W {}

@@ -1,7 +1,7 @@
 use crate::{
     crypto::ciphers::{AES256Cipher, ChaCha20Cipher, Cipher, TwofishCipher},
     kdbx::db::kdbx4::errors::Kdbx4HeaderError,
-    utils::writer::Writable,
+    utils::writer::{FixedSize, Writable},
 };
 use hex_literal::hex;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -60,5 +60,11 @@ impl Writable for EncryptionAlgorithm {
             EncryptionAlgorithm::Twofish => &CIPHERSUITE_TWOFISH,
         })?;
         Ok(())
+    }
+}
+
+impl FixedSize for EncryptionAlgorithm {
+    fn fix_size(&self) -> usize {
+        16
     }
 }

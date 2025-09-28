@@ -1,7 +1,8 @@
 use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
 use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::InnerEncryptionAlgorithm;
-use byteorder::ByteOrder;
+use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
 use byteorder::LittleEndian;
+use byteorder::{ByteOrder, WriteBytesExt};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const INNER_HEADER_END_OF_HEADER: u8 = 0x00;
@@ -72,5 +73,25 @@ impl TryFrom<&[u8]> for Kdbx4InnerHeader {
             binary_content: binary_content_vec,
             header_size: pos,
         })
+    }
+}
+
+impl Writable for Kdbx4InnerHeader {
+    fn write<W: std::io::Write + std::io::Seek>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), std::io::Error> {
+        writer.write_u8(INNER_HEADER_INNER_ENCRYPTION_ALGORITHM)?;
+        writer.write_fixed_size_data(&self.inner_encryption_algorithm)?;
+
+        writer.write_u8(INNER_HEADER_INNER_ENCRYPTION_KEY)?;
+        writer.write_bytes_with_length(&self.inner_encryption_key)?;
+        for binary_content in &self.binary_content {
+            writer.write_u8(INNER_HEADER_BINARY_CONTENT)?;
+            writer.write_fixed_size_data(binary_content)?;
+        }
+
+        writer.write_u8(INNER_HEADER_END_OF_HEADER)?;
+        Ok(())
     }
 }

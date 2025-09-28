@@ -1,7 +1,7 @@
 use byteorder::{WriteBytesExt, LE};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use crate::utils::writer::Writable;
+use crate::utils::writer::{FixedSize, Writable};
 
 const INNER_ENCRYPTION_ALGORITHM_SALSA20: u32 = 2;
 const INNER_ENCRYPTION_ALGORITHM_CHACHA20: u32 = 3;
@@ -37,5 +37,11 @@ impl Writable for InnerEncryptionAlgorithm {
             InnerEncryptionAlgorithm::ChaCha20 => INNER_ENCRYPTION_ALGORITHM_CHACHA20,
         })?;
         Ok(())
+    }
+}
+
+impl FixedSize for InnerEncryptionAlgorithm {
+    fn fix_size(&self) -> usize {
+        4
     }
 }

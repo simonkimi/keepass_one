@@ -1,12 +1,11 @@
-use crate::crypto;
 use aes::Aes256;
 use block_padding::Pkcs7;
 use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, StreamCipher};
 use generic_array::GenericArray;
 
 pub trait Cipher {
-    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>>;
-    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>>;
+    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>>;
+    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>>;
 }
 
 pub struct AES256Cipher {
@@ -26,9 +25,9 @@ impl AES256Cipher {
 type Aes256CbcEnc = cbc::Encryptor<Aes256>;
 type Aes256CbcDec = cbc::Decryptor<Aes256>;
 impl Cipher for AES256Cipher {
-    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
         let data = Aes256CbcEnc::new_from_slices(&self.key, &self.iv)?
-            .encrypt_padded_vec_mut::<Pkcs7>(plaintext);
+            .encrypt_padded_vec_mut::<Pkcs7>(data);
         Ok(data)
     }
     fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
@@ -60,15 +59,15 @@ impl TwofishCipher {
 }
 
 impl Cipher for TwofishCipher {
-    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
         let encryptor = TwofishCbcEncryptor::new_from_slices(&self.key, &self.iv)?;
-        let data = encryptor.encrypt_padded_vec_mut::<Pkcs7>(plaintext);
+        let data = encryptor.encrypt_padded_vec_mut::<Pkcs7>(data);
         Ok(data)
     }
-    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
         let cipher = TwofishCbcDecryptor::new_from_slices(&self.key, &self.iv)?;
 
-        let mut buf = ciphertext.to_vec();
+        let mut buf = data.to_vec();
         cipher.decrypt_padded_mut::<Pkcs7>(&mut buf)?;
         Ok(buf)
     }
@@ -88,13 +87,13 @@ impl ChaCha20Cipher {
 }
 
 impl Cipher for ChaCha20Cipher {
-    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let mut buf = plaintext.to_vec();
+    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)
     }
-    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let mut buf = ciphertext.to_vec();
+    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)
     }
@@ -114,13 +113,13 @@ impl Salsa20Cipher {
 }
 
 impl Cipher for Salsa20Cipher {
-    fn encrypt(&mut self, plaintext: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let mut buffer = Vec::from(plaintext);
+    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buffer = Vec::from(data);
         self.cipher.apply_keystream(&mut buffer);
         Ok(buffer)
     }
-    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let mut buffer = Vec::from(ciphertext);
+    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let mut buffer = Vec::from(data);
         self.cipher.apply_keystream(&mut buffer);
         Ok(buffer)
     }

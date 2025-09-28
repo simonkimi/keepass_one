@@ -4,7 +4,7 @@ use crate::kdbx::db::kdbx4::header_entity::encryption_algorithm::EncryptionAlgor
 use crate::kdbx::db::kdbx4::header_entity::kdf_config::KdfConfig;
 use crate::kdbx::db::kdbx4::header_entity::variant_dictionary::VariantDictionary;
 use crate::kdbx::db::version::{KDBX4_MAJOR_VERSION, KDBX_IDENTIFIER, KEEPASS_LATEST_ID};
-use crate::utils::writer::Writable;
+use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt, LE};
 use std::collections::HashMap;
 use std::io::{Cursor, Seek, SeekFrom, Write};
@@ -106,6 +106,33 @@ impl Writable for Kdbx4Header {
         writer.write_u32::<LE>(KEEPASS_LATEST_ID)?;
         writer.write_u16::<LE>(1)?;
         writer.write_u16::<LE>(KDBX4_MAJOR_VERSION)?;
-        todo!("write other header fields");
+
+        // 写入其他头信息
+        writer.write_u8(HEADER_ENCRYPTION_ALGORITHM)?;
+        writer.write_fixed_size_data(&self.encryption_algorithm)?;
+
+        writer.write_u8(HEADER_COMPRESSION_ALGORITHM)?;
+        writer.write_fixed_size_data(&self.compression_config)?;
+
+        writer.write_u8(HEADER_MASTER_SEED)?;
+        writer.write_bytes_with_length(&self.master_salt_seed)?;
+
+        writer.write_u8(HEADER_ENCRYPTION_IV)?;
+        writer.write_bytes_with_length(&self.encryption_iv)?;
+
+        writer.write_u8(HEADER_KDF_PARAMETERS)?;
+        writer.write_with_calculated_length(&self.kdf_parameters)?;
+
+        if let Some(public_custom_data) = &self.public_custom_data {
+            writer.write_u8(HEADER_PUBLIC_CUSTOM_DATA)?;
+            writer.write_with_calculated_length(public_custom_data)?;
+        }
+
+        for (key, value) in &self.unknown_header {
+            writer.write_u8(*key)?;
+            writer.write_bytes_with_length(value)?;
+        }
+
+        Ok(())
     }
 }

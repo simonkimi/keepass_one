@@ -1,6 +1,6 @@
 use crate::{
     kdbx::{self, db::kdbx4::errors::Kdbx4HeaderError},
-    utils::writer::Writable,
+    utils::writer::{FixedSize, Writable},
 };
 use hex_literal::hex;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -52,5 +52,11 @@ impl Writable for CompressionConfig {
             CompressionConfig::GZip => &COMPRESSION_CONFIG_GZIP,
         })?;
         Ok(())
+    }
+}
+
+impl FixedSize for CompressionConfig {
+    fn fix_size(&self) -> usize {
+        4
     }
 }

@@ -36,7 +36,7 @@ secrecy = "0.10.3"
 zeroize = { version = "1.8.1", features = ["derive"] }
 serde_with = { version = "3.9.0", features = ["macros"] }
 dashmap = "6.1.0"
-
+getrandom = { version = "0.3", features = ["std"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
