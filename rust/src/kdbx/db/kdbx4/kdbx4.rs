@@ -1,16 +1,15 @@
-use crate::{crypto, kdbx::db::kdbx4::hmac::parse_hmac_block};
 use crate::crypto::hash;
 use crate::kdbx::db::kdbx4::header::Kdbx4Header;
 use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
-use byteorder::{ByteOrder, LittleEndian};
-use generic_array::{
-    typenum::{U32, U64},
-    GenericArray,
-};
+use crate::kdbx::xml::entities::KeePassXml;
+use crate::{crypto, kdbx::db::kdbx4::hmac::parse_hmac_block};
+use generic_array::{typenum::U32, GenericArray};
 use hex_literal::hex;
 
 pub struct Kdbx4 {
-
+    pub xml: KeePassXml,
+    pub inner_header: Kdbx4InnerHeader,
+    pub key_hash: GenericArray<u8, U32>,
 }
 
 impl Kdbx4 {
@@ -60,25 +59,31 @@ impl Kdbx4 {
 
         std::fs::write("demo.xml", xml)?;
 
-        println!("{}", String::from_utf8_lossy(xml));
-        Ok(Kdbx4 {})
+        
+
+        // println!("{}", String::from_utf8_lossy(xml));
+        // Ok(Kdbx4 {
+        //     xml,
+        //     inner_header,
+        //     key_hash: key_hash.clone(),
+        // })
+        todo!()
     }
 }
-
-
 
 #[cfg(test)]
 mod kdbx4_tests {
     use crate::kdbx::{db::kdbx4::kdbx4::Kdbx4, keys::KdbxKey};
 
     #[test]
-    fn test_kdbx4_open() {
+    fn test_kdbx4_open() -> anyhow::Result<()>{
         let file_path = r#"C:\Users\ms\Desktop\test.kdbx"#;
-        let data = std::fs::read(file_path).unwrap();
+        let data = std::fs::read(file_path)?;
 
         let mut key = KdbxKey::new();
         key.add_master_key("test123456");
-        let key_hash = key.calc_key_hash().unwrap();
-        Kdbx4::open(&data, &key_hash).unwrap();
+        let key_hash = key.calc_key_hash()?;
+        Kdbx4::open(&data, &key_hash)?;
+        Ok(())
     }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 /// Copyright (C) 2007-2025 Dominik Reichl.
 /// <https://keepass.info/help/kb/kdbx.html>
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct KeePassFile {
+pub struct KeePassXml {
     #[serde(rename = "Meta")]
     pub meta: Meta,
     #[serde(rename = "Root")]
@@ -231,7 +231,7 @@ pub struct Group {
     ///
     /// 对存储在KeePassFile/Meta/CustomIcons元素中的自定义图标的引用。如果非零，则会覆盖IconID。
     #[serde(rename = "CustomIconUUID")]
-    pub custom_icon_uuid: String,
+    pub custom_icon_uuid: Option<String>,
     #[serde(rename = "Times")]
     pub times: Times,
     /// Specifies whether the group is displayed as expanded in the user interface.
@@ -252,7 +252,7 @@ pub struct Group {
     ///
     /// 当前组先前存储在其中的组的UUID。此信息可用于回收站还原命令。
     #[serde(rename = "PreviousParentGroup")]
-    pub previous_parent_group: String,
+    pub previous_parent_group: Option<String>,
     #[serde(rename = "Entry", default)]
     pub entry: Vec<Entry>,
     #[serde(rename = "Group", default)]
@@ -303,7 +303,7 @@ pub struct Entry {
     ///
     /// 参阅TGroup/CustomIconUUID。
     #[serde(rename = "CustomIconUUID")]
-    pub custom_icon_uuid: String,
+    pub custom_icon_uuid: Option<String>,
     #[serde(rename = "ForegroundColor")]
     #[serde(default)]
     pub foreground_color: String,
@@ -317,7 +317,7 @@ pub struct Entry {
     /// <https://keepass.info/help/v2/entry.html#gen>
     /// <https://keepass.info/help/kb/pw_quality_est.html>
     #[serde(rename = "QualityCheck")]
-    pub quality_check: String,
+    pub quality_check: Option<String>,
     /// See TGroup/Tags.
     ///
     /// 参阅TGroup/Tags。
@@ -328,7 +328,7 @@ pub struct Entry {
     ///
     /// 参阅TGroup/PreviousParentGroup。
     #[serde(rename = "PreviousParentGroup")]
-    pub previous_parent_group: String,
+    pub previous_parent_group: Option<String>,
     #[serde(rename = "Times")]
     pub times: Times,
     #[serde(rename = "String", default)]
@@ -396,7 +396,7 @@ pub struct AutoType {
     #[serde(rename = "DataTransferObfuscation")]
     pub data_transfer_obfuscation: u32,
     #[serde(rename = "DefaultSequence")]
-    pub default_sequence: String,
+    pub default_sequence: Option<String>,
 }
 
 /// https://keepass.info/help/v2/entry.html#hst
