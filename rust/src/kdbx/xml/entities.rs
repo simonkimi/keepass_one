@@ -5,11 +5,20 @@ use serde::{Deserialize, Serialize};
 /// Copyright (C) 2007-2025 Dominik Reichl.
 /// <https://keepass.info/help/kb/kdbx.html>
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct KeePassXml {
+pub struct KeePassDocument {
     #[serde(rename = "Meta")]
     pub meta: Meta,
     #[serde(rename = "Root")]
     pub root: Root,
+}
+
+impl TryFrom<&[u8]> for KeePassDocument {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let document: KeePassDocument = quick_xml::de::from_reader(value)?;
+        Ok(document)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -306,14 +315,14 @@ pub struct Entry {
     pub custom_icon_uuid: Option<String>,
     #[serde(rename = "ForegroundColor")]
     #[serde(default)]
-    pub foreground_color: String,
+    pub foreground_color: Option<String>,
     #[serde(rename = "BackgroundColor")]
     #[serde(default)]
-    pub background_color: String,
+    pub background_color: Option<String>,
     /// <https://keepass.info/help/base/autourl.html#override>
     #[serde(rename = "OverrideURL")]
     #[serde(default)]
-    pub override_url: String,
+    pub override_url: Option<String>,
     /// <https://keepass.info/help/v2/entry.html#gen>
     /// <https://keepass.info/help/kb/pw_quality_est.html>
     #[serde(rename = "QualityCheck")]

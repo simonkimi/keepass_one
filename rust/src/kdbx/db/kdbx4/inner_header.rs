@@ -1,14 +1,18 @@
+use crate::crypto::ciphers::{ChaCha20Cipher, Cipher, Salsa20Cipher, StreamCipherExt};
+use crate::crypto::hash::{calculate_sha256, calculate_sha512};
 use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
 use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::InnerEncryptionAlgorithm;
 use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
 use byteorder::LittleEndian;
 use byteorder::{ByteOrder, WriteBytesExt};
+use hex_literal::hex;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const INNER_HEADER_END_OF_HEADER: u8 = 0x00;
 pub const INNER_HEADER_INNER_ENCRYPTION_ALGORITHM: u8 = 0x01;
 pub const INNER_HEADER_INNER_ENCRYPTION_KEY: u8 = 0x02;
 pub const INNER_HEADER_BINARY_CONTENT: u8 = 0x03;
+pub const SALSA20_IV: [u8; 8] = hex!("E830094B97205D2A");
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct Kdbx4InnerHeader {
@@ -93,5 +97,19 @@ impl Writable for Kdbx4InnerHeader {
 
         writer.write_u8(INNER_HEADER_END_OF_HEADER)?;
         Ok(())
+    }
+}
+
+impl Kdbx4InnerHeader {
+    pub fn get_stream_cipher(&self) -> Box<dyn StreamCipherExt> {
+        match self.inner_encryption_algorithm {
+            InnerEncryptionAlgorithm::ChaCha20 => {
+                Box::new(ChaCha20Cipher::new(&self.inner_encryption_key, &SALSA20_IV))
+            }
+            InnerEncryptionAlgorithm::Salsa20 => {
+                let key = calculate_sha256(&self.inner_encryption_key);
+                Box::new(Salsa20Cipher::new(&key, &SALSA20_IV))
+            }
+        }
     }
 }

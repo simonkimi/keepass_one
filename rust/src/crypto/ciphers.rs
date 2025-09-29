@@ -1,11 +1,15 @@
 use aes::Aes256;
 use block_padding::Pkcs7;
-use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, StreamCipher};
+use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, StreamCipher, StreamCipherSeek};
 use generic_array::GenericArray;
 
 pub trait Cipher {
     fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>>;
     fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>>;
+}
+
+pub trait StreamCipherExt {
+    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> anyhow::Result<Vec<u8>>;
 }
 
 pub struct AES256Cipher {
@@ -99,6 +103,15 @@ impl Cipher for ChaCha20Cipher {
     }
 }
 
+impl StreamCipherExt for ChaCha20Cipher {
+    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+        self.cipher.try_seek(skip as u64)?;
+        let mut buf = data.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
+    }
+}
+
 pub struct Salsa20Cipher {
     cipher: salsa20::Salsa20,
 }
@@ -122,5 +135,14 @@ impl Cipher for Salsa20Cipher {
         let mut buffer = Vec::from(data);
         self.cipher.apply_keystream(&mut buffer);
         Ok(buffer)
+    }
+}
+
+impl StreamCipherExt for Salsa20Cipher {
+    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+        self.cipher.try_seek(skip as u64)?;
+        let mut buf = data.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
     }
 }
