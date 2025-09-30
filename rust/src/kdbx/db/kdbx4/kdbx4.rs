@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Write;
+
 use crate::crypto::hash;
 use crate::kdbx::db::kdbx4::header::Kdbx4Header;
 use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
@@ -56,6 +59,7 @@ impl Kdbx4 {
 
         let inner_header = Kdbx4InnerHeader::try_from(&payload_uncompressed[..])?;
         let xml = &payload_uncompressed[inner_header.header_size..];
+        std::fs::write("demo.xml", xml)?;
 
         let xml_document = KeePassDocument::try_from(xml)?;
 
@@ -68,7 +72,11 @@ impl Kdbx4 {
 
 #[cfg(test)]
 mod kdbx4_tests {
-    use crate::kdbx::{db::kdbx4::kdbx4::Kdbx4, keys::KdbxKey};
+    use crate::kdbx::{
+        db::kdbx4::kdbx4::Kdbx4,
+        keys::KdbxKey,
+        xml::{database::KeePassDatabase, entities},
+    };
 
     #[test]
     fn test_kdbx4_open() -> anyhow::Result<()> {
@@ -78,7 +86,36 @@ mod kdbx4_tests {
         let mut key = KdbxKey::new();
         key.add_master_key("test123456");
         let key_hash = key.calc_key_hash()?;
-        Kdbx4::open(&data, &key_hash)?;
+        let kdbx = Kdbx4::open(&data, &key_hash)?;
+        walk_group(&kdbx.database, "", &kdbx.database.document.root.group);
         Ok(())
+    }
+
+    fn walk_group(database: &KeePassDatabase, path: &str, group: &entities::Group) {
+        let path = format!("{}/{}", path, group.name);
+        for entry in &group.entry {
+            walk_entry(database, &path, entry, 0);
+        }
+
+        for group in &group.group {
+            walk_group(database, &path, group);
+        }
+    }
+
+    fn walk_entry(database: &KeePassDatabase, path: &str, entry: &entities::Entry, entity_index: usize) {
+        for value in &entry.string {
+            let path = format!("{}/{}", path, value.key);
+            if value.value.is_protected() {
+                let protected_value = database
+                    .decrypt_protected_value(entry.uuid.as_str(), &value.key, entity_index, &value.value.value)
+                    .unwrap();
+                println!("{}: {}", path, protected_value);
+            }
+        }
+        if let Some(history) = &entry.history {
+            for (index, history_entry) in history.entry.iter().enumerate() {
+                walk_entry(database, &path, history_entry, index + 1);
+            }
+        }
     }
 }

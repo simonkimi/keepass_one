@@ -378,6 +378,12 @@ pub struct Value {
     pub value: String,
 }
 
+impl Value {
+    pub fn is_protected(&self) -> bool {
+        self.protected.as_ref().map_or(false, |s| s == "True")
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ProtectedBinary {
     #[serde(rename = "Key")]

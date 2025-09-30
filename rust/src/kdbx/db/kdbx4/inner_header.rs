@@ -104,7 +104,8 @@ impl Kdbx4InnerHeader {
     pub fn get_stream_cipher(&self) -> Box<dyn StreamCipherExt> {
         match self.inner_encryption_algorithm {
             InnerEncryptionAlgorithm::ChaCha20 => {
-                Box::new(ChaCha20Cipher::new(&self.inner_encryption_key, &SALSA20_IV))
+                let h = calculate_sha512(&self.inner_encryption_key);
+                Box::new(ChaCha20Cipher::new(&h[0..32], &h[32..44]))
             }
             InnerEncryptionAlgorithm::Salsa20 => {
                 let key = calculate_sha256(&self.inner_encryption_key);
