@@ -2,11 +2,11 @@ use crate::{
     kdbx::{self, db::kdbx4::errors::Kdbx4HeaderError},
     utils::writer::{FixedSize, Writable},
 };
-use hex_literal::hex;
+use byteorder::{ByteOrder, WriteBytesExt, LE};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-const COMPRESSION_CONFIG_NONE: [u8; 4] = hex!("00000000");
-const COMPRESSION_CONFIG_GZIP: [u8; 4] = hex!("01000000");
+const COMPRESSION_CONFIG_NONE: u32 = 0;
+const COMPRESSION_CONFIG_GZIP: u32 = 1;
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub enum CompressionConfig {
@@ -24,12 +24,11 @@ impl TryFrom<&[u8]> for CompressionConfig {
     type Error = Kdbx4HeaderError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        if value == COMPRESSION_CONFIG_NONE {
-            Ok(CompressionConfig::None)
-        } else if value == COMPRESSION_CONFIG_GZIP {
-            Ok(CompressionConfig::GZip)
-        } else {
-            Err(Kdbx4HeaderError::InvalidHeader)
+        let compression = LE::read_u32(value);
+        match compression {
+            COMPRESSION_CONFIG_NONE => Ok(CompressionConfig::None),
+            COMPRESSION_CONFIG_GZIP => Ok(CompressionConfig::GZip),
+            _ => Err(Kdbx4HeaderError::InvalidCompressionAlgorithm(compression)),
         }
     }
 }
@@ -47,9 +46,9 @@ impl Writable for CompressionConfig {
         &self,
         writer: &mut W,
     ) -> Result<(), std::io::Error> {
-        writer.write_all(match self {
-            CompressionConfig::None => &COMPRESSION_CONFIG_NONE,
-            CompressionConfig::GZip => &COMPRESSION_CONFIG_GZIP,
+        writer.write_u32::<LE>(match self {
+            CompressionConfig::None => COMPRESSION_CONFIG_NONE,
+            CompressionConfig::GZip => COMPRESSION_CONFIG_GZIP,
         })?;
         Ok(())
     }

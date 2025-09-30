@@ -1,11 +1,8 @@
-use std::fs::File;
-use std::io::Write;
-
 use crate::crypto::hash;
+use crate::kdbx::db::kdbx4::errors::Kdbx4Error;
 use crate::kdbx::db::kdbx4::header::Kdbx4Header;
 use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
 use crate::kdbx::xml::database::KeePassDatabase;
-use crate::kdbx::xml::entities::KeePassDocument;
 use crate::{crypto, kdbx::db::kdbx4::hmac::parse_hmac_block};
 use generic_array::{typenum::U32, GenericArray};
 use hex_literal::hex;
@@ -16,14 +13,14 @@ pub struct Kdbx4 {
 }
 
 impl Kdbx4 {
-    pub fn open(data: &[u8], key_hash: &GenericArray<u8, U32>) -> anyhow::Result<Kdbx4> {
+    pub fn open(data: &[u8], key_hash: &GenericArray<u8, U32>) -> Result<Kdbx4, Kdbx4Error> {
         let header = Kdbx4Header::try_from(data)?;
         let header_bytes = &data[..header.size];
         let header_sha256 = &data[header.size..header.size + 32];
         let header_hmac = &data[header.size + 32..header.size + 64];
 
         if header_sha256 != crypto::hash::calculate_sha256(header_bytes).as_slice() {
-            return Err(anyhow::anyhow!("Header SHA-256 checksum mismatch"));
+            return Err(Kdbx4Error::HeaderSha256ChecksumMismatch);
         }
 
         let transformed_key = header.kdf_parameters.get_kdf().transform_key(key_hash)?;
@@ -39,7 +36,7 @@ impl Kdbx4 {
         if header_hmac
             != hash::calculate_hmac_multiple(&[&header_bytes], &header_hmac_key)?.as_slice()
         {
-            return Err(anyhow::anyhow!("Header HMAC checksum mismatch"));
+            return Err(Kdbx4Error::HeaderHmacChecksumMismatch);
         }
 
         let payload_encrypted = parse_hmac_block(&data[header.size + 64..], &hmac_key)?;
@@ -61,11 +58,9 @@ impl Kdbx4 {
         let xml = &payload_uncompressed[inner_header.header_size..];
         std::fs::write("demo.xml", xml)?;
 
-        let xml_document = KeePassDocument::try_from(xml)?;
-
         Ok(Self {
             key_hash: key_hash.clone(),
-            database: KeePassDatabase::new(xml_document, inner_header),
+            database: KeePassDatabase::try_from(xml, inner_header)?,
         })
     }
 }
@@ -102,12 +97,22 @@ mod kdbx4_tests {
         }
     }
 
-    fn walk_entry(database: &KeePassDatabase, path: &str, entry: &entities::Entry, entity_index: usize) {
+    fn walk_entry(
+        database: &KeePassDatabase,
+        path: &str,
+        entry: &entities::Entry,
+        entity_index: usize,
+    ) {
         for value in &entry.string {
             let path = format!("{}/{}", path, value.key);
             if value.value.is_protected() {
                 let protected_value = database
-                    .decrypt_protected_value(entry.uuid.as_str(), &value.key, entity_index, &value.value.value)
+                    .decrypt_protected_value(
+                        entry.uuid.as_str(),
+                        &value.key,
+                        entity_index,
+                        &value.value.value,
+                    )
                     .unwrap();
                 println!("{}: {}", path, protected_value);
             }

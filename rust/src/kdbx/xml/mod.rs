@@ -1,5 +1,6 @@
 pub mod database;
 pub mod entities;
+pub mod errors;
 
 #[cfg(test)]
 mod tests {

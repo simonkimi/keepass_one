@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use crate::{
     crypto,
     kdbx::db::kdbx4::header_entity::variant_dictionary::{
-        VariantDictionary, VariantDictionaryValue,
+        VariantDictionary, VariantDictionaryError, VariantDictionaryValue,
     },
     utils::writer::Writable,
 };
 use hex_literal::hex;
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use thiserror::Error;
 
 const KDF_AES: [u8; 16] = hex!("C9D9F39A628A4460BF740D08C18A4FEA");
 const KDF_ARGON2D: [u8; 16] = hex!("EF636DDF8C29444B91F7A9A403E30A0C");
@@ -27,6 +27,21 @@ const ARGON2_PARALLELISM_KEY: &str = "P";
 const ARGON2_VERSION_10: u32 = 0x10;
 const ARGON2_VERSION_13: u32 = 0x13;
 
+#[derive(Debug, Error)]
+pub enum KdfConfigError {
+    #[error("Invalid variant dictionary")]
+    InvalidVariantDictionary(#[from] VariantDictionaryError),
+
+    #[error("Invalid AES salt")]
+    InvalidAesSalt,
+
+    #[error("Invalid Argon2 version")]
+    InvalidArgon2Version(u32),
+
+    #[error("Invalid KDF UUID")]
+    InvalidKdfUuid(String),
+}
+
 #[derive(Debug, PartialEq)]
 pub enum KdfConfig {
     Aes {
@@ -44,7 +59,7 @@ pub enum KdfConfig {
 }
 
 impl TryFrom<&[u8]> for KdfConfig {
-    type Error = anyhow::Error;
+    type Error = KdfConfigError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let vd = VariantDictionary::try_from(value)?;
@@ -149,18 +164,20 @@ impl Writable for KdfConfig {
     }
 }
 
-fn parse_kdf_keys(vd: &VariantDictionary) -> anyhow::Result<KdfConfig> {
+fn parse_kdf_keys(vd: &VariantDictionary) -> Result<KdfConfig, KdfConfigError> {
     let uuid: &Vec<u8> = vd.get(KDF_UUID_KEY)?;
     if uuid == &KDF_AES {
         let salt: &Vec<u8> = vd.get(AES_SALT_KEY)?;
         if salt.len() != 32 {
-            return Err(anyhow::anyhow!("Aes密钥长度不匹配"));
+            return Err(KdfConfigError::InvalidAesSalt);
         }
 
         let rounds: &u64 = vd.get(AES_ROUNDS_KEY)?;
 
         Ok(KdfConfig::Aes {
-            salt: salt[..].try_into()?,
+            salt: salt[..]
+                .try_into()
+                .map_err(|_| KdfConfigError::InvalidAesSalt)?,
             rounds: *rounds,
         })
     } else if uuid == &KDF_ARGON2D || uuid == &KDF_ARGON2ID {
@@ -171,7 +188,7 @@ fn parse_kdf_keys(vd: &VariantDictionary) -> anyhow::Result<KdfConfig> {
         let parallelism: &u32 = vd.get(ARGON2_PARALLELISM_KEY)?;
 
         if version != &ARGON2_VERSION_10 && version != &ARGON2_VERSION_13 {
-            return Err(anyhow::anyhow!("不支持的Argon2版本"));
+            return Err(KdfConfigError::InvalidArgon2Version(*version));
         }
 
         Ok(KdfConfig::Argon2 {
@@ -187,7 +204,7 @@ fn parse_kdf_keys(vd: &VariantDictionary) -> anyhow::Result<KdfConfig> {
             },
         })
     } else {
-        Err(anyhow::anyhow!("不支持的KDF"))
+        Err(KdfConfigError::InvalidKdfUuid(hex::encode(uuid)))
     }
 }
 

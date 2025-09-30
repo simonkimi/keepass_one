@@ -5,9 +5,9 @@ use crate::kdbx::db::kdbx4::header_entity::kdf_config::KdfConfig;
 use crate::kdbx::db::kdbx4::header_entity::variant_dictionary::VariantDictionary;
 use crate::kdbx::db::version::{KDBX4_MAJOR_VERSION, KDBX_IDENTIFIER, KEEPASS_LATEST_ID};
 use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
-use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt, LE};
+use byteorder::{ByteOrder, WriteBytesExt, LE};
 use std::collections::HashMap;
-use std::io::{Cursor, Seek, SeekFrom, Write};
+use std::io::{Seek, Write};
 
 const HEADER_END: u8 = 0;
 const HEADER_ENCRYPTION_ALGORITHM: u8 = 2;
@@ -61,9 +61,13 @@ impl TryFrom<&[u8]> for Kdbx4Header {
                 }
                 HEADER_MASTER_SEED => {
                     if hf_buffer.len() != 32 {
-                        return Err(Kdbx4HeaderError::InvalidHeader);
+                        return Err(Kdbx4HeaderError::InvalidMasterSeed);
                     }
-                    master_salt_seed = Some(hf_buffer[..32].try_into().unwrap());
+                    master_salt_seed = Some(
+                        hf_buffer[..32]
+                            .try_into()
+                            .map_err(|_| Kdbx4HeaderError::InvalidMasterSeed)?,
+                    );
                 }
                 HEADER_ENCRYPTION_IV => {
                     encryption_iv = Some(hf_buffer.to_vec());
@@ -71,13 +75,13 @@ impl TryFrom<&[u8]> for Kdbx4Header {
                 HEADER_KDF_PARAMETERS => {
                     kdf_parameters = Some(
                         KdfConfig::try_from(hf_buffer)
-                            .map_err(|_| Kdbx4HeaderError::InvalidHeader)?,
+                            .map_err(Kdbx4HeaderError::InvalidKdfParameters)?,
                     );
                 }
 
                 HEADER_PUBLIC_CUSTOM_DATA => {
                     let vd = VariantDictionary::try_from(hf_buffer)
-                        .map_err(|_| Kdbx4HeaderError::InvalidVariantDictionary)?;
+                        .map_err(Kdbx4HeaderError::InvalidVariantDictionary)?;
                     public_custom_data = Some(vd);
                 }
                 _ => {

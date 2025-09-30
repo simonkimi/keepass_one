@@ -3,9 +3,17 @@ use aes::Aes256;
 use generic_array::typenum::U32;
 use generic_array::GenericArray;
 use sha2::{Digest, Sha256};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum KdfError {
+    #[error("Hash raw error")]
+    HashRawError(#[from] argon2::Error),
+}
 
 pub trait Kdf {
-    fn transform_key(&self, key: &GenericArray<u8, U32>) -> anyhow::Result<GenericArray<u8, U32>>;
+    fn transform_key(&self, key: &GenericArray<u8, U32>)
+        -> Result<GenericArray<u8, U32>, KdfError>;
 }
 
 pub struct AesKdf {
@@ -14,7 +22,10 @@ pub struct AesKdf {
 }
 
 impl Kdf for AesKdf {
-    fn transform_key(&self, key: &GenericArray<u8, U32>) -> anyhow::Result<GenericArray<u8, U32>> {
+    fn transform_key(
+        &self,
+        key: &GenericArray<u8, U32>,
+    ) -> Result<GenericArray<u8, U32>, KdfError> {
         let seed_array = GenericArray::from_slice(&self.seed);
         let cipher = Aes256::new(seed_array);
 
@@ -44,7 +55,10 @@ pub struct Argon2Kdf {
 }
 
 impl Kdf for Argon2Kdf {
-    fn transform_key(&self, key: &GenericArray<u8, U32>) -> anyhow::Result<GenericArray<u8, U32>> {
+    fn transform_key(
+        &self,
+        key: &GenericArray<u8, U32>,
+    ) -> Result<GenericArray<u8, U32>, KdfError> {
         let config = argon2::Config {
             thread_mode: argon2::ThreadMode::Parallel,
             ad: &[],
@@ -57,7 +71,7 @@ impl Kdf for Argon2Kdf {
             version: self.version,
         };
 
-        let key = argon2::hash_raw(key, &self.salt, &config)?;
+        let key = argon2::hash_raw(key, &self.salt, &config).map_err(KdfError::HashRawError)?;
         Ok(*GenericArray::from_slice(&key))
     }
 }

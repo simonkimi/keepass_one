@@ -1,5 +1,6 @@
-use crate::crypto::ciphers::{ChaCha20Cipher, Cipher, Salsa20Cipher, StreamCipherExt};
+use crate::crypto::ciphers::{ChaCha20Cipher, Salsa20Cipher, StreamCipherExt};
 use crate::crypto::hash::{calculate_sha256, calculate_sha512};
+use crate::kdbx::db::kdbx4::errors::Kdbx4InnerHeaderError;
 use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
 use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::InnerEncryptionAlgorithm;
 use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
@@ -23,7 +24,7 @@ pub struct Kdbx4InnerHeader {
 }
 
 impl TryFrom<&[u8]> for Kdbx4InnerHeader {
-    type Error = anyhow::Error;
+    type Error = Kdbx4InnerHeaderError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut pos = 0;
@@ -55,20 +56,17 @@ impl TryFrom<&[u8]> for Kdbx4InnerHeader {
                     binary_content_vec.push(binary_content);
                 }
                 _ => {
-                    return Err(anyhow::anyhow!(
-                        "Unknown inner header type: {}",
-                        header_type
-                    ));
+                    return Err(Kdbx4InnerHeaderError::UnknownInnerHeaderType(header_type));
                 }
             }
         }
 
         if let None = inner_encryption_algorithm {
-            return Err(anyhow::anyhow!("Inner encryption algorithm not found"));
+            return Err(Kdbx4InnerHeaderError::MissingInnerEncryptionAlgorithm);
         }
 
         if let None = inner_encryption_key {
-            return Err(anyhow::anyhow!("Inner encryption key not found"));
+            return Err(Kdbx4InnerHeaderError::MissingInnerEncryptionKey);
         }
 
         Ok(Kdbx4InnerHeader {

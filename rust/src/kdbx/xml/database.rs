@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use crate::{
     kdbx::{
         db::kdbx4::inner_header::Kdbx4InnerHeader,
-        xml::entities::{self, KeePassDocument},
+        xml::{
+            entities::{Entry, Group, KeePassDocument, StringField},
+            errors::KdbxDatabaseError,
+        },
     },
     utils,
 };
@@ -15,13 +18,14 @@ pub struct KeePassDatabase {
 }
 
 impl KeePassDatabase {
-    pub fn new(document: KeePassDocument, inner_header: Kdbx4InnerHeader) -> Self {
+    pub fn try_from(xml: &[u8], inner_header: Kdbx4InnerHeader) -> Result<Self, KdbxDatabaseError> {
+        let document: KeePassDocument = quick_xml::de::from_reader(xml)?;
         let protected_values = collect_protected_values_document(&document);
-        Self {
+        Ok(Self {
             document,
             inner_header,
             protect_values: protected_values,
-        }
+        })
     }
 
     pub fn decrypt_protected_value(
@@ -30,18 +34,32 @@ impl KeePassDatabase {
         key: &str,
         entity_index: usize,
         protected_value: &str,
-    ) -> anyhow::Result<String> {
+    ) -> Result<String, KdbxDatabaseError> {
         let mut cipher = self.inner_header.get_stream_cipher();
 
         let combined_key = format!("{}:{}:{}", uuid, key, entity_index);
-        let protect_value = self
-            .protect_values
-            .get(&combined_key)
-            .ok_or(anyhow::anyhow!("Protected value not found"))?;
+        let protect_value = self.protect_values.get(&combined_key).ok_or(
+            KdbxDatabaseError::ProtectedValueNotFound {
+                uuid: uuid.to_string(),
+                key: key.to_string(),
+                entity_index,
+            },
+        )?;
 
         let decoded =
-            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, protected_value)?;
-        let data = cipher.decrypt_stream(*protect_value, &decoded)?;
+            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, protected_value)
+                .map_err(|_| KdbxDatabaseError::ProtectedValueDecryptError {
+                    uuid: uuid.to_string(),
+                    key: key.to_string(),
+                    entity_index,
+                })?;
+        let data = cipher
+            .decrypt_stream(*protect_value, &decoded)
+            .map_err(|_| KdbxDatabaseError::ProtectedValueDecryptError {
+                uuid: uuid.to_string(),
+                key: key.to_string(),
+                entity_index,
+            })?;
         Ok(String::from_utf8_lossy(&data).to_string())
     }
 }
@@ -53,7 +71,7 @@ fn collect_protected_values_document(document: &KeePassDocument) -> HashMap<Stri
 }
 
 fn collect_protected_values_group(
-    group: &entities::Group,
+    group: &Group,
     stream_offset: usize,
     values: &mut HashMap<String, usize>,
 ) -> usize {
@@ -68,7 +86,7 @@ fn collect_protected_values_group(
 }
 
 fn collect_protected_values_entry(
-    entry: &entities::Entry,
+    entry: &Entry,
     stream_offset: usize,
     values: &mut HashMap<String, usize>,
 ) -> usize {
@@ -90,7 +108,7 @@ fn collect_protected_values_entry(
 }
 
 fn process_protected_values(
-    string_fields: &[entities::StringField],
+    string_fields: &[StringField],
     uuid: &str,
     entity_index: usize,
     stream_offset: usize,

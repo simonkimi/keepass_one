@@ -2,9 +2,13 @@ use byteorder::{ByteOrder, LE};
 use generic_array::typenum::U64;
 use generic_array::GenericArray;
 
+use crate::crypto::errors::CryptoError;
 use crate::crypto::hash;
 
-pub fn parse_hmac_block(data: &[u8], hmac_key: &GenericArray<u8, U64>) -> anyhow::Result<Vec<u8>> {
+pub fn parse_hmac_block(
+    data: &[u8],
+    hmac_key: &GenericArray<u8, U64>,
+) -> Result<Vec<u8>, CryptoError> {
     let mut total_block: Vec<u8> = Vec::new();
     let mut pos = 0;
     let mut block_index: u64 = 0;
@@ -30,7 +34,7 @@ pub fn parse_hmac_block(data: &[u8], hmac_key: &GenericArray<u8, U64>) -> anyhow
             )?
             .as_slice()
         {
-            return Err(anyhow::anyhow!("Block HMAC checksum mismatch"));
+            return Err(CryptoError::HmacMismatch);
         }
 
         block_index += 1;

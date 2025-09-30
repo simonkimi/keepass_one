@@ -1,15 +1,16 @@
+use crate::crypto::errors::CryptoError;
 use aes::Aes256;
 use block_padding::Pkcs7;
 use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, StreamCipher, StreamCipherSeek};
 use generic_array::GenericArray;
 
 pub trait Cipher {
-    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>>;
-    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>>;
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError>;
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError>;
 }
 
 pub trait StreamCipherExt {
-    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> anyhow::Result<Vec<u8>>;
+    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> Result<Vec<u8>, CryptoError>;
 }
 
 pub struct AES256Cipher {
@@ -29,16 +30,19 @@ impl AES256Cipher {
 type Aes256CbcEnc = cbc::Encryptor<Aes256>;
 type Aes256CbcDec = cbc::Decryptor<Aes256>;
 impl Cipher for AES256Cipher {
-    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let data = Aes256CbcEnc::new_from_slices(&self.key, &self.iv)?
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let data = Aes256CbcEnc::new_from_slices(&self.key, &self.iv)
+            .map_err(CryptoError::InvalidLength)?
             .encrypt_padded_vec_mut::<Pkcs7>(data);
         Ok(data)
     }
-    fn decrypt(&mut self, ciphertext: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn decrypt(&mut self, ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut output = vec![0u8; ciphertext.len()];
-        let decryptor = Aes256CbcDec::new_from_slices(&self.key, &self.iv)?;
+        let decryptor = Aes256CbcDec::new_from_slices(&self.key, &self.iv)
+            .map_err(CryptoError::InvalidLength)?;
         let len = decryptor
-            .decrypt_padded_b2b_mut::<Pkcs7>(ciphertext, &mut output)?
+            .decrypt_padded_b2b_mut::<Pkcs7>(ciphertext, &mut output)
+            .map_err(CryptoError::UnpadError)?
             .len();
         output.truncate(len);
         Ok(output)
@@ -63,13 +67,15 @@ impl TwofishCipher {
 }
 
 impl Cipher for TwofishCipher {
-    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let encryptor = TwofishCbcEncryptor::new_from_slices(&self.key, &self.iv)?;
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let encryptor = TwofishCbcEncryptor::new_from_slices(&self.key, &self.iv)
+            .map_err(CryptoError::InvalidLength)?;
         let data = encryptor.encrypt_padded_vec_mut::<Pkcs7>(data);
         Ok(data)
     }
-    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
-        let cipher = TwofishCbcDecryptor::new_from_slices(&self.key, &self.iv)?;
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let cipher = TwofishCbcDecryptor::new_from_slices(&self.key, &self.iv)
+            .map_err(CryptoError::InvalidLength)?;
 
         let mut buf = data.to_vec();
         cipher.decrypt_padded_mut::<Pkcs7>(&mut buf)?;
@@ -91,12 +97,12 @@ impl ChaCha20Cipher {
 }
 
 impl Cipher for ChaCha20Cipher {
-    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)
     }
-    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)
@@ -104,7 +110,7 @@ impl Cipher for ChaCha20Cipher {
 }
 
 impl StreamCipherExt for ChaCha20Cipher {
-    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
         self.cipher.try_seek(skip as u64)?;
         let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
@@ -126,12 +132,12 @@ impl Salsa20Cipher {
 }
 
 impl Cipher for Salsa20Cipher {
-    fn encrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut buffer = Vec::from(data);
         self.cipher.apply_keystream(&mut buffer);
         Ok(buffer)
     }
-    fn decrypt(&mut self, data: &[u8]) -> anyhow::Result<Vec<u8>> {
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut buffer = Vec::from(data);
         self.cipher.apply_keystream(&mut buffer);
         Ok(buffer)
@@ -139,8 +145,10 @@ impl Cipher for Salsa20Cipher {
 }
 
 impl StreamCipherExt for Salsa20Cipher {
-    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> anyhow::Result<Vec<u8>> {
-        self.cipher.try_seek(skip as u64)?;
+    fn decrypt_stream(&mut self, skip: usize, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        self.cipher
+            .try_seek(skip as u64)
+            .map_err(CryptoError::StreamCipherError)?;
         let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)

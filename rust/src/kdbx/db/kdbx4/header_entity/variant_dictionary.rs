@@ -1,7 +1,8 @@
+use byteorder::LittleEndian;
 use byteorder::{ByteOrder, WriteBytesExt, LE};
-use byteorder::{LittleEndian, ReadBytesExt};
-use std::{collections::HashMap, io::Cursor, io::Write};
+use std::{collections::HashMap, io::Write};
 use zeroize::{Zeroize, ZeroizeOnDrop};
+use thiserror::Error;
 
 use crate::utils::writer::Writable;
 
@@ -15,19 +16,34 @@ const I64_TYPE_ID: u8 = 0x0d;
 const STR_TYPE_ID: u8 = 0x18;
 const BYTES_TYPE_ID: u8 = 0x42;
 
+#[derive(Debug, Error)]
+pub enum VariantDictionaryError {
+    #[error("Invalid variant dictionary version: {0}")]
+    InvalidVersion(u16),
+
+    #[error("Invalid variant dictionary value type: {0}")]
+    InvalidValueType(u8),
+
+    #[error("Key not found: {0}")]
+    KeyNotFound(String),
+
+    #[error("Type mismatch: {0}")]
+    TypeMismatch(String),
+}
+
 pub struct VariantDictionary {
     items: HashMap<String, VariantDictionaryValue>,
 }
 
 impl TryFrom<&[u8]> for VariantDictionary {
-    type Error = anyhow::Error;
+    type Error = VariantDictionaryError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut pos: usize = 0;
         let version = LE::read_u16(&value[pos..]);
         pos += 2;
         if version != VARIANT_DICTIONARY_VERSION {
-            return Err(anyhow::anyhow!("Invalid variant dictionary version"));
+            return Err(VariantDictionaryError::InvalidVersion(version));
         }
 
         let mut data = HashMap::new();
@@ -58,10 +74,7 @@ impl TryFrom<&[u8]> for VariantDictionary {
                 }
                 BYTES_TYPE_ID => VariantDictionaryValue::ByteArray(value_buf.to_vec()),
                 _ => {
-                    return Err(anyhow::anyhow!(
-                        "Invalid variant dictionary value type: {}",
-                        value_type
-                    ));
+                    return Err(VariantDictionaryError::InvalidValueType(value_type));
                 }
             };
             data.insert(String::from_utf8_lossy(name_buffer).to_string(), value);
@@ -82,16 +95,18 @@ impl VariantDictionary {
         Self { items }
     }
 
-    pub fn get<'a, T: 'a>(&'a self, key: &str) -> anyhow::Result<&'a T>
+    pub fn get<'a, T: 'a>(&'a self, key: &str) -> Result<&'a T, VariantDictionaryError>
     where
         &'a VariantDictionaryValue: Into<Option<&'a T>>,
     {
         let entity = self
             .items
             .get(key)
-            .ok_or(anyhow::anyhow!("未找到对应的key"))?;
+            .ok_or(VariantDictionaryError::KeyNotFound(key.to_string()))?;
 
-        entity.into().ok_or_else(|| anyhow::anyhow!("类型不匹配"))
+        entity
+            .into()
+            .ok_or_else(|| VariantDictionaryError::TypeMismatch(key.to_string()))
     }
 }
 
@@ -267,6 +282,7 @@ impl<'a> From<&'a VariantDictionaryValue> for Option<&'a Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
 
     #[test]
     fn test_write_and_parse() {

@@ -34,7 +34,9 @@ impl TryFrom<&[u8]> for EncryptionAlgorithm {
         } else if value == CIPHERSUITE_TWOFISH {
             Ok(EncryptionAlgorithm::Twofish)
         } else {
-            Err(Kdbx4HeaderError::InvalidHeader)
+            Err(Kdbx4HeaderError::InvalidEncryptionAlgorithm(hex::encode(
+                value,
+            )))
         }
     }
 }
