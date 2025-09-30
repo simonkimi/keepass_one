@@ -1,9 +1,9 @@
 use thiserror::Error;
 
 use crate::crypto::errors::CryptoError;
+use crate::crypto::kdf::KdfError;
 use crate::kdbx::db::kdbx4::header_entity::kdf_config::KdfConfigError;
 use crate::kdbx::db::kdbx4::header_entity::variant_dictionary::VariantDictionaryError;
-use crate::crypto::kdf::KdfError;
 use crate::kdbx::xml::errors::KdbxDatabaseError;
 
 #[derive(Debug, Error)]
@@ -25,6 +25,9 @@ pub enum Kdbx4HeaderError {
 
     #[error("Invalid KDF parameters")]
     InvalidKdfParameters(#[from] KdfConfigError),
+
+    #[error("Missing required header fields: {0}")]
+    MissingRequiredHeaderFields(&'static str),
 }
 
 #[derive(Debug, Error)]
@@ -52,7 +55,7 @@ pub enum Kdbx4Error {
 
     #[error("Header HMAC checksum mismatch")]
     HeaderHmacChecksumMismatch,
-    
+
     #[error("KDF transform key error")]
     KdfTransformKeyError(#[from] KdfError),
 

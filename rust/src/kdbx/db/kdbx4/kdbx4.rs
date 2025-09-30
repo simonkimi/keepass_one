@@ -1,4 +1,5 @@
 use crate::crypto::hash;
+use crate::kdbx::db::kdbx4::config::Kdbx4Config;
 use crate::kdbx::db::kdbx4::errors::Kdbx4Error;
 use crate::kdbx::db::kdbx4::header::Kdbx4Header;
 use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
@@ -9,23 +10,28 @@ use hex_literal::hex;
 
 pub struct Kdbx4 {
     pub key_hash: GenericArray<u8, U32>,
+    pub header: Kdbx4Header,
     pub database: KeePassDatabase,
 }
 
 impl Kdbx4 {
     pub fn open(data: &[u8], key_hash: &GenericArray<u8, U32>) -> Result<Kdbx4, Kdbx4Error> {
-        let header = Kdbx4Header::try_from(data)?;
-        let header_bytes = &data[..header.size];
-        let header_sha256 = &data[header.size..header.size + 32];
-        let header_hmac = &data[header.size + 32..header.size + 64];
+        let (header, header_size) = Kdbx4Header::try_from(data)?;
+        let header_bytes = &data[..header_size];
+        let header_sha256 = &data[header_size..header_size + 32];
+        let header_hmac = &data[header_size + 32..header_size + 64];
 
         if header_sha256 != crypto::hash::calculate_sha256(header_bytes).as_slice() {
             return Err(Kdbx4Error::HeaderSha256ChecksumMismatch);
         }
 
-        let transformed_key = header.kdf_parameters.get_kdf().transform_key(key_hash)?;
+        let transformed_key = header
+            .config
+            .kdf_parameters
+            .get_kdf()
+            .transform_key(key_hash)?;
         let hmac_key = hash::calculate_sha512_multiple(&[
-            &header.master_salt_seed,
+            &header.config.master_salt_seed,
             &transformed_key,
             &hex!("01"),
         ]);
@@ -39,17 +45,19 @@ impl Kdbx4 {
             return Err(Kdbx4Error::HeaderHmacChecksumMismatch);
         }
 
-        let payload_encrypted = parse_hmac_block(&data[header.size + 64..], &hmac_key)?;
+        let payload_encrypted = parse_hmac_block(&data[header_size + 64..], &hmac_key)?;
 
         let master_key =
-            hash::calculate_sha256_multiple(&[&header.master_salt_seed, &transformed_key]);
+            hash::calculate_sha256_multiple(&[&header.config.master_salt_seed, &transformed_key]);
 
         let payload_decrypted = header
+            .config
             .encryption_algorithm
-            .get_cipher(&master_key, &header.encryption_iv)
+            .get_cipher(&master_key, &header.config.encryption_iv)
             .decrypt(&payload_encrypted)?;
 
         let payload_uncompressed = header
+            .config
             .compression_config
             .get_compression()
             .decompress(&payload_decrypted)?;
@@ -60,8 +68,16 @@ impl Kdbx4 {
 
         Ok(Self {
             key_hash: key_hash.clone(),
+            header,
             database: KeePassDatabase::try_from(xml, inner_header)?,
         })
+    }
+
+    pub fn save_with_config(&self, config: Kdbx4Config) -> anyhow::Result<Vec<u8>> {
+        let header = self.header.copy_from(config);
+        let header_bytes = header.dump()?;
+
+        Ok(header_bytes)
     }
 }
 

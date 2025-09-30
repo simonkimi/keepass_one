@@ -1,8 +1,8 @@
 use byteorder::LittleEndian;
 use byteorder::{ByteOrder, WriteBytesExt, LE};
 use std::{collections::HashMap, io::Write};
-use zeroize::{Zeroize, ZeroizeOnDrop};
 use thiserror::Error;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::utils::writer::Writable;
 
@@ -31,6 +31,7 @@ pub enum VariantDictionaryError {
     TypeMismatch(String),
 }
 
+#[derive(Debug, Clone)]
 pub struct VariantDictionary {
     items: HashMap<String, VariantDictionaryValue>,
 }

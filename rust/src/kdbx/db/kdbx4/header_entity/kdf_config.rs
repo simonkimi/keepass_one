@@ -42,7 +42,7 @@ pub enum KdfConfigError {
     InvalidKdfUuid(String),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum KdfConfig {
     Aes {
         salt: [u8; 32],
@@ -95,6 +95,38 @@ impl KdfConfig {
                     parallelism: *parallelism,
                     variant: *variant,
                 })
+            }
+        }
+    }
+
+    pub fn rekey(&self) -> Self {
+        match self {
+            KdfConfig::Aes { rounds, .. } => {
+                let mut salt = [0; 32];
+                getrandom::fill(&mut salt).unwrap();
+                KdfConfig::Aes {
+                    salt,
+                    rounds: *rounds,
+                }
+            }
+            KdfConfig::Argon2 {
+                version,
+                iterations,
+                memory,
+                parallelism,
+                variant,
+                ..
+            } => {
+                let mut salt = vec![0; 32];
+                getrandom::fill(&mut salt).unwrap();
+                KdfConfig::Argon2 {
+                    version: *version,
+                    salt: salt,
+                    iterations: *iterations,
+                    memory: *memory,
+                    parallelism: *parallelism,
+                    variant: *variant,
+                }
             }
         }
     }

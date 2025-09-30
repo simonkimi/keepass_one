@@ -1,13 +1,14 @@
+use crate::kdbx::db::kdbx4::config::Kdbx4Config;
 use crate::kdbx::db::kdbx4::errors::Kdbx4HeaderError;
 use crate::kdbx::db::kdbx4::header_entity::compression::CompressionConfig;
 use crate::kdbx::db::kdbx4::header_entity::encryption_algorithm::EncryptionAlgorithm;
 use crate::kdbx::db::kdbx4::header_entity::kdf_config::KdfConfig;
 use crate::kdbx::db::kdbx4::header_entity::variant_dictionary::VariantDictionary;
 use crate::kdbx::db::version::{KDBX4_MAJOR_VERSION, KDBX_IDENTIFIER, KEEPASS_LATEST_ID};
-use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
+use crate::utils::writer::{FixedSizeExt, WritableExt};
 use byteorder::{ByteOrder, WriteBytesExt, LE};
 use std::collections::HashMap;
-use std::io::{Seek, Write};
+use std::io::{Cursor, Write};
 
 const HEADER_END: u8 = 0;
 const HEADER_ENCRYPTION_ALGORITHM: u8 = 2;
@@ -18,20 +19,21 @@ const HEADER_KDF_PARAMETERS: u8 = 11;
 const HEADER_PUBLIC_CUSTOM_DATA: u8 = 12;
 
 pub struct Kdbx4Header {
-    pub encryption_algorithm: EncryptionAlgorithm,
-    pub compression_config: CompressionConfig,
-    pub master_salt_seed: [u8; 32],
-    pub encryption_iv: Vec<u8>,
-    pub kdf_parameters: KdfConfig,
+    pub config: Kdbx4Config,
     public_custom_data: Option<VariantDictionary>,
     unknown_header: HashMap<u8, Vec<u8>>,
-    pub size: usize,
 }
 
-impl TryFrom<&[u8]> for Kdbx4Header {
-    type Error = Kdbx4HeaderError;
+impl Kdbx4Header {
+    pub fn copy_from(&self, config: Kdbx4Config) -> Self {
+        Self {
+            config,
+            public_custom_data: self.public_custom_data.clone(),
+            unknown_header: self.unknown_header.clone(),
+        }
+    }
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+    pub fn try_from(value: &[u8]) -> Result<(Self, usize), Kdbx4HeaderError> {
         let mut encryption_algorithm: Option<EncryptionAlgorithm> = None;
         let mut compression_config: Option<CompressionConfig> = None;
         let mut master_salt_seed: Option<[u8; 32]> = None;
@@ -63,11 +65,7 @@ impl TryFrom<&[u8]> for Kdbx4Header {
                     if hf_buffer.len() != 32 {
                         return Err(Kdbx4HeaderError::InvalidMasterSeed);
                     }
-                    master_salt_seed = Some(
-                        hf_buffer[..32]
-                            .try_into()
-                            .map_err(|_| Kdbx4HeaderError::InvalidMasterSeed)?,
-                    );
+                    master_salt_seed = Some(hf_buffer[..32].try_into().unwrap());
                 }
                 HEADER_ENCRYPTION_IV => {
                     encryption_iv = Some(hf_buffer.to_vec());
@@ -90,21 +88,43 @@ impl TryFrom<&[u8]> for Kdbx4Header {
             }
         }
 
-        Ok(Kdbx4Header {
-            encryption_algorithm: encryption_algorithm.ok_or(Kdbx4HeaderError::InvalidHeader)?,
-            compression_config: compression_config.ok_or(Kdbx4HeaderError::InvalidHeader)?,
-            master_salt_seed: master_salt_seed.ok_or(Kdbx4HeaderError::InvalidHeader)?,
-            encryption_iv: encryption_iv.ok_or(Kdbx4HeaderError::InvalidHeader)?,
-            kdf_parameters: kdf_parameters.ok_or(Kdbx4HeaderError::InvalidHeader)?,
-            public_custom_data,
-            unknown_header,
-            size: pos,
-        })
+        Ok((
+            Kdbx4Header {
+                config: Kdbx4Config {
+                    encryption_algorithm: encryption_algorithm.ok_or(
+                        Kdbx4HeaderError::MissingRequiredHeaderFields("encryption_algorithm"),
+                    )?,
+                    compression_config: compression_config.ok_or(
+                        Kdbx4HeaderError::MissingRequiredHeaderFields("compression_config"),
+                    )?,
+                    master_salt_seed: master_salt_seed.ok_or(
+                        Kdbx4HeaderError::MissingRequiredHeaderFields("master_salt_seed"),
+                    )?,
+                    encryption_iv: encryption_iv.ok_or(
+                        Kdbx4HeaderError::MissingRequiredHeaderFields("encryption_iv"),
+                    )?,
+                    kdf_parameters: kdf_parameters.ok_or(
+                        Kdbx4HeaderError::MissingRequiredHeaderFields("kdf_parameters"),
+                    )?,
+                },
+                public_custom_data,
+                unknown_header,
+            },
+            pos,
+        ))
     }
-}
 
-impl Writable for Kdbx4Header {
-    fn write<W: Write + Seek>(&self, writer: &mut W) -> Result<(), std::io::Error> {
+    pub fn rekey(&self) -> Self {
+        Self {
+            config: self.config.rekey(),
+            public_custom_data: self.public_custom_data.clone(),
+            unknown_header: self.unknown_header.clone(),
+        }
+    }
+
+    pub fn dump(&self) -> Result<Vec<u8>, std::io::Error> {
+        let mut buffer = Vec::new();
+        let mut writer = Cursor::new(&mut buffer);
         // kdbx固定12字节头
         writer.write_all(&KDBX_IDENTIFIER)?;
         writer.write_u32::<LE>(KEEPASS_LATEST_ID)?;
@@ -113,19 +133,19 @@ impl Writable for Kdbx4Header {
 
         // 写入其他头信息
         writer.write_u8(HEADER_ENCRYPTION_ALGORITHM)?;
-        writer.write_fixed_size_data(&self.encryption_algorithm)?;
+        writer.write_fixed_size_data(&self.config.encryption_algorithm)?;
 
         writer.write_u8(HEADER_COMPRESSION_ALGORITHM)?;
-        writer.write_fixed_size_data(&self.compression_config)?;
+        writer.write_fixed_size_data(&self.config.compression_config)?;
 
         writer.write_u8(HEADER_MASTER_SEED)?;
-        writer.write_bytes_with_length(&self.master_salt_seed)?;
+        writer.write_bytes_with_length(&self.config.master_salt_seed)?;
 
         writer.write_u8(HEADER_ENCRYPTION_IV)?;
-        writer.write_bytes_with_length(&self.encryption_iv)?;
+        writer.write_bytes_with_length(&self.config.encryption_iv)?;
 
         writer.write_u8(HEADER_KDF_PARAMETERS)?;
-        writer.write_with_calculated_length(&self.kdf_parameters)?;
+        writer.write_with_calculated_length(&self.config.kdf_parameters)?;
 
         if let Some(public_custom_data) = &self.public_custom_data {
             writer.write_u8(HEADER_PUBLIC_CUSTOM_DATA)?;
@@ -137,6 +157,6 @@ impl Writable for Kdbx4Header {
             writer.write_bytes_with_length(value)?;
         }
 
-        Ok(())
+        Ok(buffer)
     }
 }

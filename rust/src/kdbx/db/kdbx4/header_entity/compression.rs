@@ -8,7 +8,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 const COMPRESSION_CONFIG_NONE: u32 = 0;
 const COMPRESSION_CONFIG_GZIP: u32 = 1;
 
-#[derive(Zeroize, ZeroizeOnDrop)]
+#[derive(Debug, Clone)]
 pub enum CompressionConfig {
     None,
     GZip,

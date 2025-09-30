@@ -4,13 +4,12 @@ use crate::{
     utils::writer::{FixedSize, Writable},
 };
 use hex_literal::hex;
-use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const CIPHERSUITE_AES256: [u8; 16] = hex!("31C1F2E6BF714350BE5805216AFC5AFF");
 const CIPHERSUITE_CHACHA20: [u8; 16] = hex!("D6038A2B8B6F4CB5A524339A31DBB59A");
 const CIPHERSUITE_TWOFISH: [u8; 16] = hex!("AD68F29F576F4BB9A36AD47AF965346C");
 
-#[derive(Zeroize, ZeroizeOnDrop)]
+#[derive(Debug, Clone)]
 pub enum EncryptionAlgorithm {
     Aes256,
     ChaCha20,
@@ -48,6 +47,16 @@ impl EncryptionAlgorithm {
             EncryptionAlgorithm::ChaCha20 => Box::new(ChaCha20Cipher::new(key, iv)),
             EncryptionAlgorithm::Twofish => Box::new(TwofishCipher::new(key, iv)),
         }
+    }
+
+    pub fn get_random_iv(&self) -> Vec<u8> {
+        let mut iv = match self {
+            EncryptionAlgorithm::Aes256 => vec![0; 16],
+            EncryptionAlgorithm::ChaCha20 => vec![0; 12],
+            EncryptionAlgorithm::Twofish => vec![0; 16],
+        };
+        getrandom::fill(&mut iv);
+        iv
     }
 }
 
