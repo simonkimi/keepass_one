@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use crate::kdbx::xml::entities::times::Times;
 use crate::kdbx::xml::entities::entry::Entry;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Group {
     #[serde(rename = "UUID")]
     pub uuid: String,

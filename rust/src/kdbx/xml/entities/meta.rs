@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use crate::kdbx::xml::entities::memory_protection::MemoryProtection;
 use crate::kdbx::xml::entities::custom_data::CustomData;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Meta {
     /// Name of the application that has generated the XML document.
     ///

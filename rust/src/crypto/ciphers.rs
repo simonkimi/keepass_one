@@ -11,8 +11,9 @@ pub trait Cipher {
 
 pub trait StreamCipherExt {
     fn decrypt_at_offset(&mut self, offset: usize, data: &[u8]) -> Result<Vec<u8>, CryptoError>;
-    fn decrypt(&mut self, data: &mut [u8]) -> Result<(), CryptoError>;
-    fn encrypt(&mut self, data: &mut [u8]) -> Result<(), CryptoError>;
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError>;
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError>;
+    fn current_pos(&self) -> usize;
 }
 
 pub struct AES256Cipher {
@@ -118,13 +119,18 @@ impl StreamCipherExt for ChaCha20Cipher {
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)
     }
-    fn decrypt(&mut self, data: &mut [u8]) -> Result<(), CryptoError> {
-        self.cipher.apply_keystream(data);
-        Ok(())
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let mut buf = data.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
     }
-    fn encrypt(&mut self, data: &mut [u8]) -> Result<(), CryptoError> {
-        self.cipher.apply_keystream(data);
-        Ok(())
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let mut buf = data.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
+    }
+    fn current_pos(&self) -> usize {
+        self.cipher.current_pos()
     }
 }
 
@@ -156,18 +162,23 @@ impl Cipher for Salsa20Cipher {
 
 impl StreamCipherExt for Salsa20Cipher {
     fn decrypt_at_offset(&mut self, offset: usize, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
-        self.cipher
-            .try_seek(offset as u64)?;
+        self.cipher.try_seek(offset as u64)?;
         let mut buf = data.to_vec();
         self.cipher.apply_keystream(&mut buf);
         Ok(buf)
     }
-    fn decrypt(&mut self, data: &mut [u8]) -> Result<(), CryptoError> {
-        self.cipher.apply_keystream(data);
-        Ok(())
+    fn decrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let mut buf = data.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
     }
-    fn encrypt(&mut self, data: &mut [u8]) -> Result<(), CryptoError> {
-        self.cipher.apply_keystream(data);
-        Ok(())
+    fn encrypt(&mut self, data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+        let mut buf = data.to_vec();
+        self.cipher.apply_keystream(&mut buf);
+        Ok(buf)
+    }
+
+    fn current_pos(&self) -> usize {
+        self.cipher.current_pos()
     }
 }

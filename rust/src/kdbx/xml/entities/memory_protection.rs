@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 /// Process memory protection settings, describing which standard fields should be protected. KeePass resets these settings to their default values after opening a database.
 ///
 /// 进程内存保护设置，描述应保护哪些标准字段。KeePass在打开数据库后将这些设置重置为其默认值。
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct MemoryProtection {
     #[serde(rename = "ProtectTitle")]
     pub protect_title: String,

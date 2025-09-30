@@ -7,7 +7,6 @@ use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
 use byteorder::LittleEndian;
 use byteorder::{ByteOrder, WriteBytesExt};
 use hex_literal::hex;
-use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const INNER_HEADER_END_OF_HEADER: u8 = 0x00;
 pub const INNER_HEADER_INNER_ENCRYPTION_ALGORITHM: u8 = 0x01;
@@ -18,7 +17,6 @@ pub const SALSA20_IV: [u8; 8] = hex!("E830094B97205D2A");
 pub struct Kdbx4InnerHeader {
     pub encryption: Kdbx4InnerEncryption,
     pub binary_content: Vec<BinaryContent>,
-    pub header_size: usize,
 }
 
 pub struct Kdbx4InnerEncryption {
@@ -26,10 +24,8 @@ pub struct Kdbx4InnerEncryption {
     pub inner_encryption_key: Vec<u8>,
 }
 
-impl TryFrom<&[u8]> for Kdbx4InnerHeader {
-    type Error = Kdbx4InnerHeaderError;
-
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+impl Kdbx4InnerHeader {
+    pub fn try_from(value: &[u8]) -> Result<(Self, usize), Kdbx4InnerHeaderError> {
         let mut pos = 0;
 
         let mut inner_encryption_algorithm: Option<InnerEncryptionAlgorithm> = None;
@@ -72,14 +68,16 @@ impl TryFrom<&[u8]> for Kdbx4InnerHeader {
             return Err(Kdbx4InnerHeaderError::MissingInnerEncryptionKey);
         }
 
-        Ok(Kdbx4InnerHeader {
-            encryption: Kdbx4InnerEncryption {
-                inner_encryption_algorithm: inner_encryption_algorithm.unwrap(),
-                inner_encryption_key: inner_encryption_key.unwrap(),
+        Ok((
+            Kdbx4InnerHeader {
+                encryption: Kdbx4InnerEncryption {
+                    inner_encryption_algorithm: inner_encryption_algorithm.unwrap(),
+                    inner_encryption_key: inner_encryption_key.unwrap(),
+                },
+                binary_content: binary_content_vec,
             },
-            binary_content: binary_content_vec,
-            header_size: pos,
-        })
+            pos,
+        ))
     }
 }
 

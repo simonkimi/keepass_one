@@ -54,8 +54,8 @@ impl Kdbx4 {
             .get_compression()
             .decompress(&payload_decrypted)?;
 
-        let inner_header = Kdbx4InnerHeader::try_from(&payload_uncompressed[..])?;
-        let xml = &payload_uncompressed[inner_header.header_size..];
+        let (inner_header, header_size) = Kdbx4InnerHeader::try_from(&payload_uncompressed[..])?;
+        let xml = &payload_uncompressed[header_size..];
         std::fs::write("demo.xml", xml)?;
 
         Ok(Self {
@@ -67,10 +67,17 @@ impl Kdbx4 {
 
 #[cfg(test)]
 mod kdbx4_tests {
-    use crate::kdbx::{
-        db::kdbx4::kdbx4::Kdbx4,
-        keys::KdbxKey,
-        xml::{database::KeePassDatabase, entities},
+    use crate::{
+        kdbx::{
+            db::kdbx4::{
+                header_entity::inner_encryption_algorithm::InnerEncryptionAlgorithm,
+                inner_header::{Kdbx4InnerEncryption, Kdbx4InnerHeader},
+                kdbx4::Kdbx4,
+            },
+            keys::KdbxKey,
+            xml::{database::KeePassDatabase, entities},
+        },
+        utils::writer::Writable,
     };
 
     #[test]
@@ -81,9 +88,33 @@ mod kdbx4_tests {
         let mut key = KdbxKey::new();
         key.add_master_key("test123456");
         let key_hash = key.calc_key_hash()?;
-        let mut kdbx = Kdbx4::open(&data, &key_hash)?;
+        let kdbx = Kdbx4::open(&data, &key_hash)?;
 
         walk_group(&kdbx.database, "", &kdbx.database.document.root.group);
+
+        let mut new_key = vec![0; 32];
+        getrandom::fill(&mut new_key)?;
+        let new_encryption = Kdbx4InnerEncryption {
+            inner_encryption_algorithm: InnerEncryptionAlgorithm::ChaCha20,
+            inner_encryption_key: new_key,
+        };
+
+        // 测试保存一份新的数据
+        let new_document = kdbx.database.encrypt_document(&new_encryption)?;
+        let new_database = KeePassDatabase::new(
+            new_document,
+            Kdbx4InnerHeader {
+                encryption: new_encryption,
+                binary_content: vec![],
+            },
+        );
+
+        println!("new_database: \n\n\n");
+        walk_group(&new_database, "", &new_database.document.root.group);
+
+        let mut writer = std::fs::File::create("demo_new.xml")?;
+        new_database.document.write(&mut writer)?;
+
         Ok(())
     }
 
@@ -103,11 +134,6 @@ mod kdbx4_tests {
             let path = format!("{}/{}", path, value.key);
             let value_string = database.get_value_string(&value.value).unwrap();
             println!("{}: {}", path, value_string);
-        }
-        if let Some(history) = &entry.history {
-            for history_entry in &history.entry {
-                walk_entry(database, &path, history_entry);
-            }
         }
     }
 }

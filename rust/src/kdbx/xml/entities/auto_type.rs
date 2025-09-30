@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// https://keepass.info/help/base/autotype.html
-#[derive(Debug, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Default, Clone)]
 pub struct AutoType {
     #[serde(rename = "Enabled")]
     pub enabled: String,

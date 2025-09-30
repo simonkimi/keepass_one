@@ -1,12 +1,11 @@
 use crate::kdbx::{
-    db::kdbx4::inner_header::Kdbx4InnerHeader,
+    db::kdbx4::inner_header::{Kdbx4InnerEncryption, Kdbx4InnerHeader},
     xml::{
         entities::{KeePassDocument, Value},
         errors::KdbxDatabaseError,
         protected_value,
     },
 };
-use std::collections::HashMap;
 
 pub struct KeePassDatabase {
     pub document: KeePassDocument,
@@ -14,6 +13,13 @@ pub struct KeePassDatabase {
 }
 
 impl KeePassDatabase {
+    pub fn new(document: KeePassDocument, inner_header: Kdbx4InnerHeader) -> Self {
+        Self {
+            document,
+            inner_header,
+        }
+    }
+
     pub fn try_from(xml: &[u8], inner_header: Kdbx4InnerHeader) -> Result<Self, KdbxDatabaseError> {
         let mut document: KeePassDocument = quick_xml::de::from_reader(xml)?;
         protected_value::collect_protected_values_document(&mut document);
@@ -39,5 +45,16 @@ impl KeePassDatabase {
                 }
             }
         }
+    }
+
+    pub fn encrypt_document(
+        &self,
+        encryption: &Kdbx4InnerEncryption,
+    ) -> Result<KeePassDocument, KdbxDatabaseError> {
+        let mut document = self.document.clone();
+        let mut old_cipher = self.inner_header.encryption.get_stream_cipher();
+        let mut new_cipher = encryption.get_stream_cipher();
+        protected_value::encrypt_protected_value(&mut document, &mut old_cipher, &mut new_cipher);
+        Ok(document)
     }
 }

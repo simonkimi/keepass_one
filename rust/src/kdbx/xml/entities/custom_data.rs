@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Default, Clone)]
 pub struct CustomData {
     #[serde(rename = "Item", default)]
     pub item: Vec<Item>,
@@ -12,7 +12,7 @@ pub struct CustomData {
 /// The key should be unique, e.g. "PluginName_ItemName".
 ///
 /// 密钥应该是唯一的，例如"PluginName_ItemName"。
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Item {
     #[serde(rename = "Key")]
     pub key: String,

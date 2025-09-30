@@ -1,7 +1,7 @@
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     Protected {
         value: Vec<u8>,

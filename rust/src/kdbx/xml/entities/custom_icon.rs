@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 /// A custom icon.
 ///
 /// 自定义图标
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct CustomIcon {
     /// The UUID of the custom icon.
     ///

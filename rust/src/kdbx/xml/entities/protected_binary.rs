@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 /// A protected binary.
 ///
 /// 受保护的二进制文件
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct TProtectedBinaryDef {
     /// The ID of the protected binary.
     ///
@@ -27,7 +27,7 @@ pub struct TProtectedBinaryDef {
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ProtectedBinary {
     #[serde(rename = "Key")]
     pub key: String,
@@ -35,7 +35,7 @@ pub struct ProtectedBinary {
     pub value: ProtectedBinaryValue,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ProtectedBinaryValue {
     /// Reference to a binary content stored in the inner header (KDBX file) or in the Meta/Binaries element (unencrypted XML file).
     ///

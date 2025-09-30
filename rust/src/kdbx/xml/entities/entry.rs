@@ -5,7 +5,7 @@ use crate::kdbx::xml::entities::protected_binary::ProtectedBinary;
 use crate::kdbx::xml::entities::auto_type::AutoType;
 use crate::kdbx::xml::entities::history::History;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Entry {
     #[serde(rename = "UUID")]
     pub uuid: String,

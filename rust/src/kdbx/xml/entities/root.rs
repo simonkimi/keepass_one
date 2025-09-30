@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::kdbx::xml::entities::group::Group;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Root {
     #[serde(rename = "Group")]
     pub group: Group,
@@ -13,13 +13,13 @@ pub struct Root {
     pub deleted_objects: DeletedObjects,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Default, Clone)]
 pub struct DeletedObjects {
     #[serde(rename = "DeletedObject", default)]
     pub deleted_object: Vec<DeletedObject>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct DeletedObject {
     #[serde(rename = "UUID")]
     pub uuid: String,
