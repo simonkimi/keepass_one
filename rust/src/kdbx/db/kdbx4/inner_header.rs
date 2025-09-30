@@ -15,12 +15,15 @@ pub const INNER_HEADER_INNER_ENCRYPTION_KEY: u8 = 0x02;
 pub const INNER_HEADER_BINARY_CONTENT: u8 = 0x03;
 pub const SALSA20_IV: [u8; 8] = hex!("E830094B97205D2A");
 
-#[derive(Zeroize, ZeroizeOnDrop)]
 pub struct Kdbx4InnerHeader {
-    pub inner_encryption_algorithm: InnerEncryptionAlgorithm,
-    pub inner_encryption_key: Vec<u8>,
+    pub encryption: Kdbx4InnerEncryption,
     pub binary_content: Vec<BinaryContent>,
     pub header_size: usize,
+}
+
+pub struct Kdbx4InnerEncryption {
+    pub inner_encryption_algorithm: InnerEncryptionAlgorithm,
+    pub inner_encryption_key: Vec<u8>,
 }
 
 impl TryFrom<&[u8]> for Kdbx4InnerHeader {
@@ -70,8 +73,10 @@ impl TryFrom<&[u8]> for Kdbx4InnerHeader {
         }
 
         Ok(Kdbx4InnerHeader {
-            inner_encryption_algorithm: inner_encryption_algorithm.unwrap(),
-            inner_encryption_key: inner_encryption_key.unwrap(),
+            encryption: Kdbx4InnerEncryption {
+                inner_encryption_algorithm: inner_encryption_algorithm.unwrap(),
+                inner_encryption_key: inner_encryption_key.unwrap(),
+            },
             binary_content: binary_content_vec,
             header_size: pos,
         })
@@ -84,10 +89,10 @@ impl Writable for Kdbx4InnerHeader {
         writer: &mut W,
     ) -> Result<(), std::io::Error> {
         writer.write_u8(INNER_HEADER_INNER_ENCRYPTION_ALGORITHM)?;
-        writer.write_fixed_size_data(&self.inner_encryption_algorithm)?;
+        writer.write_fixed_size_data(&self.encryption.inner_encryption_algorithm)?;
 
         writer.write_u8(INNER_HEADER_INNER_ENCRYPTION_KEY)?;
-        writer.write_bytes_with_length(&self.inner_encryption_key)?;
+        writer.write_bytes_with_length(&self.encryption.inner_encryption_key)?;
         for binary_content in &self.binary_content {
             writer.write_u8(INNER_HEADER_BINARY_CONTENT)?;
             writer.write_fixed_size_data(binary_content)?;
@@ -98,7 +103,7 @@ impl Writable for Kdbx4InnerHeader {
     }
 }
 
-impl Kdbx4InnerHeader {
+impl Kdbx4InnerEncryption {
     pub fn get_stream_cipher(&self) -> Box<dyn StreamCipherExt> {
         match self.inner_encryption_algorithm {
             InnerEncryptionAlgorithm::ChaCha20 => {

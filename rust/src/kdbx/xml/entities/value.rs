@@ -1,23 +1,62 @@
+use serde::de::Error;
 use serde::{Deserialize, Serialize};
 
-fn is_option_string_empty(s: &Option<String>) -> bool {
-    s.as_ref().map_or(true, |s| s.is_empty())
+#[derive(Debug, PartialEq)]
+pub enum Value {
+    Protected {
+        value: Vec<u8>,
+        offset: Option<usize>,
+    },
+    Unprotected(String),
+    WaitProtect(String),
 }
 
-/// If the attribute is true, the content of the element has been encrypted (and Base64-encoded). See "inner encryption" on
-///
-/// 如果属性为true，则元素的内容已加密（并使用Base64编码）。请参阅"内部加密"：
-/// <https://keepass.info/help/kb/kdbx.html>
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Value {
-    #[serde(rename = "@Protected", skip_serializing_if = "is_option_string_empty")]
-    pub protected: Option<String>,
+#[derive(Serialize, Deserialize)]
+struct ValueXml {
+    #[serde(rename = "@Protected", skip_serializing_if = "Option::is_none")]
+    protected: Option<String>,
     #[serde(rename = "$text", default)]
-    pub value: String,
+    value: String,
 }
 
-impl Value {
-    pub fn is_protected(&self) -> bool {
-        self.protected.as_ref().map_or(false, |s| s == "True")
+impl Serialize for Value {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::Protected { ref value, .. } => ValueXml {
+                protected: Some("True".to_string()),
+                value: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, value),
+            },
+            Self::Unprotected(ref value) => ValueXml {
+                protected: None,
+                value: value.clone(),
+            },
+            Self::WaitProtect(s) => {
+                return Err(serde::ser::Error::custom(format!("WaitProcess: {}", s)))
+            }
+        }
+        .serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Value {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = ValueXml::deserialize(deserializer)?;
+        if Some("True".to_string()) == value.protected {
+            let decoded =
+                base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value.value)
+                    .map_err(|e| D::Error::custom(format!("Failed to decode base64: {}", e)))?;
+            Ok(Self::Protected {
+                value: decoded,
+                offset: None,
+            })
+        } else {
+            Ok(Self::Unprotected(value.value))
+        }
     }
 }

@@ -81,7 +81,8 @@ mod kdbx4_tests {
         let mut key = KdbxKey::new();
         key.add_master_key("test123456");
         let key_hash = key.calc_key_hash()?;
-        let kdbx = Kdbx4::open(&data, &key_hash)?;
+        let mut kdbx = Kdbx4::open(&data, &key_hash)?;
+
         walk_group(&kdbx.database, "", &kdbx.database.document.root.group);
         Ok(())
     }
@@ -89,7 +90,7 @@ mod kdbx4_tests {
     fn walk_group(database: &KeePassDatabase, path: &str, group: &entities::Group) {
         let path = format!("{}/{}", path, group.name);
         for entry in &group.entry {
-            walk_entry(database, &path, entry, 0);
+            walk_entry(database, &path, entry);
         }
 
         for group in &group.group {
@@ -97,29 +98,15 @@ mod kdbx4_tests {
         }
     }
 
-    fn walk_entry(
-        database: &KeePassDatabase,
-        path: &str,
-        entry: &entities::Entry,
-        entity_index: usize,
-    ) {
+    fn walk_entry(database: &KeePassDatabase, path: &str, entry: &entities::Entry) {
         for value in &entry.string {
             let path = format!("{}/{}", path, value.key);
-            if value.value.is_protected() {
-                let protected_value = database
-                    .decrypt_protected_value(
-                        entry.uuid.as_str(),
-                        &value.key,
-                        entity_index,
-                        &value.value.value,
-                    )
-                    .unwrap();
-                println!("{}: {}", path, protected_value);
-            }
+            let value_string = database.get_value_string(&value.value).unwrap();
+            println!("{}: {}", path, value_string);
         }
         if let Some(history) = &entry.history {
-            for (index, history_entry) in history.entry.iter().enumerate() {
-                walk_entry(database, &path, history_entry, index + 1);
+            for history_entry in &history.entry {
+                walk_entry(database, &path, history_entry);
             }
         }
     }
