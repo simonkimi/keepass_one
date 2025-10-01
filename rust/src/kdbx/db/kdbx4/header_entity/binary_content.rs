@@ -1,9 +1,8 @@
 use crate::utils::writer::{FixedSize, Writable};
 use byteorder::WriteBytesExt;
 use std::io::{Seek, Write};
-use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[derive(Zeroize, ZeroizeOnDrop)]
+#[derive(Clone)]
 pub struct BinaryContent {
     pub flag: u8,
     pub content: Vec<u8>,

@@ -2,8 +2,8 @@ use crate::crypto::ciphers::{ChaCha20Cipher, Salsa20Cipher, StreamCipherExt};
 use crate::crypto::hash::{calculate_sha256, calculate_sha512};
 use crate::kdbx::db::kdbx4::errors::Kdbx4InnerHeaderError;
 use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
-use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::InnerEncryptionAlgorithm;
-use crate::utils::writer::{FixedSizeExt, Writable, WritableExt};
+use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::{INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20, InnerEncryptionAlgorithm};
+use crate::utils::writer::{FixedSizeExt, Writable, WSExt};
 use byteorder::LittleEndian;
 use byteorder::{ByteOrder, WriteBytesExt};
 use hex_literal::hex;
@@ -79,6 +79,13 @@ impl Kdbx4InnerHeader {
             pos,
         ))
     }
+
+    pub fn copy_with(&self, encryption: Kdbx4InnerEncryption) -> Self {
+        Self {
+            encryption,
+            binary_content: self.binary_content.clone(),
+        }
+    }
 }
 
 impl Writable for Kdbx4InnerHeader {
@@ -97,6 +104,7 @@ impl Writable for Kdbx4InnerHeader {
         }
 
         writer.write_u8(INNER_HEADER_END_OF_HEADER)?;
+        writer.write_u32::<LittleEndian>(0)?;
         Ok(())
     }
 }
@@ -112,6 +120,16 @@ impl Kdbx4InnerEncryption {
                 let key = calculate_sha256(&self.inner_encryption_key);
                 Box::new(Salsa20Cipher::new(&key, &SALSA20_IV))
             }
+        }
+    }
+
+    // 生成一个新的内层加密
+    pub fn new() -> Self {
+        let mut inner_encryption_key = vec![0; INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20];
+        getrandom::fill(&mut inner_encryption_key).unwrap();
+        Self {
+            inner_encryption_algorithm: InnerEncryptionAlgorithm::ChaCha20,
+            inner_encryption_key,
         }
     }
 }

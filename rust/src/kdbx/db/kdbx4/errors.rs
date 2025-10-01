@@ -56,11 +56,17 @@ pub enum Kdbx4Error {
     #[error("Header HMAC checksum mismatch")]
     HeaderHmacChecksumMismatch,
 
+    #[error("Calculate HMAC error")]
+    CalculateHmacError(CryptoError),
+
     #[error("KDF transform key error")]
     KdfTransformKeyError(#[from] KdfError),
 
+    #[error("Parse HMAC block error")]
+    ParseHmacBlockError(CryptoError),
+
     #[error("Decrypt payload error")]
-    DecryptPayloadError(#[from] CryptoError),
+    DecryptPayloadError(CryptoError),
 
     #[error("Decompress payload error")]
     DecompressPayloadError(#[from] std::io::Error),

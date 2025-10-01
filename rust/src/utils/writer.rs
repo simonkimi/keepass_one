@@ -1,4 +1,4 @@
-use std::io::SeekFrom;
+use std::io::{Cursor, SeekFrom};
 
 use byteorder::{WriteBytesExt, LE};
 
@@ -24,9 +24,11 @@ pub trait FixedSizeExt: std::io::Write + std::io::Seek + Sized {
     }
 }
 
-pub trait WritableExt: std::io::Write + std::io::Seek + Sized {
-    fn write_with_calculated_length<T: Writable>(&mut self, data: &T) -> Result<(), std::io::Error>
-    {
+pub trait WSExt: std::io::Write + std::io::Seek + Sized {
+    fn write_with_calculated_length<T: Writable>(
+        &mut self,
+        data: &T,
+    ) -> Result<(), std::io::Error> {
         let len_field_pos = self.stream_position()?;
         self.seek(SeekFrom::Current(4))?;
         let data_start = self.stream_position()?;
@@ -52,5 +54,15 @@ pub trait WritableExt: std::io::Write + std::io::Seek + Sized {
     }
 }
 
-impl<W: std::io::Write + std::io::Seek> WritableExt for W {}
-impl<W: std::io::Write + std::io::Seek + Sized> FixedSizeExt for W {}
+pub trait WritableExt: Writable {
+    fn write_to_buffer(&self) -> Result<Vec<u8>, std::io::Error> {
+        let mut buffer = Vec::new();
+        let mut writer = Cursor::new(&mut buffer);
+        self.write(&mut writer)?;
+        Ok(buffer)
+    }
+}
+
+impl<T: std::io::Write + std::io::Seek> WSExt for T {}
+impl<T: std::io::Write + std::io::Seek + Sized> FixedSizeExt for T {}
+impl<T: Writable> WritableExt for T {}

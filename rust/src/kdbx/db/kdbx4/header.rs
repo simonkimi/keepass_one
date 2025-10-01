@@ -5,7 +5,7 @@ use crate::kdbx::db::kdbx4::header_entity::encryption_algorithm::EncryptionAlgor
 use crate::kdbx::db::kdbx4::header_entity::kdf_config::KdfConfig;
 use crate::kdbx::db::kdbx4::header_entity::variant_dictionary::VariantDictionary;
 use crate::kdbx::db::version::{KDBX4_MAJOR_VERSION, KDBX_IDENTIFIER, KEEPASS_LATEST_ID};
-use crate::utils::writer::{FixedSizeExt, WritableExt};
+use crate::utils::writer::{FixedSizeExt, WSExt, Writable};
 use byteorder::{ByteOrder, WriteBytesExt, LE};
 use std::collections::HashMap;
 use std::io::{Cursor, Write};
@@ -25,7 +25,7 @@ pub struct Kdbx4Header {
 }
 
 impl Kdbx4Header {
-    pub fn copy_from(&self, config: Kdbx4Config) -> Self {
+    pub fn copy_with(&self, config: Kdbx4Config) -> Self {
         Self {
             config,
             public_custom_data: self.public_custom_data.clone(),
@@ -113,18 +113,13 @@ impl Kdbx4Header {
             pos,
         ))
     }
+}
 
-    pub fn rekey(&self) -> Self {
-        Self {
-            config: self.config.rekey(),
-            public_custom_data: self.public_custom_data.clone(),
-            unknown_header: self.unknown_header.clone(),
-        }
-    }
-
-    pub fn dump(&self) -> Result<Vec<u8>, std::io::Error> {
-        let mut buffer = Vec::new();
-        let mut writer = Cursor::new(&mut buffer);
+impl Writable for Kdbx4Header {
+    fn write<W: std::io::Write + std::io::Seek + Sized>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), std::io::Error> {
         // kdbx固定12字节头
         writer.write_all(&KDBX_IDENTIFIER)?;
         writer.write_u32::<LE>(KEEPASS_LATEST_ID)?;
@@ -156,7 +151,8 @@ impl Kdbx4Header {
             writer.write_u8(*key)?;
             writer.write_bytes_with_length(value)?;
         }
-
-        Ok(buffer)
+        writer.write_u8(HEADER_END)?;
+        writer.write_u32::<LE>(0)?;
+        Ok(())
     }
 }

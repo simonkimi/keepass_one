@@ -1,5 +1,4 @@
 use byteorder::{WriteBytesExt, LE};
-use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::kdbx::db::kdbx4::errors::Kdbx4InnerHeaderError;
 use crate::utils::writer::{FixedSize, Writable};
@@ -7,7 +6,9 @@ use crate::utils::writer::{FixedSize, Writable};
 const INNER_ENCRYPTION_ALGORITHM_SALSA20: u32 = 2;
 const INNER_ENCRYPTION_ALGORITHM_CHACHA20: u32 = 3;
 
-#[derive(Zeroize, ZeroizeOnDrop)]
+pub const INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20: usize = 64;
+
+#[derive(Debug, Clone)]
 pub enum InnerEncryptionAlgorithm {
     Salsa20,
     ChaCha20,
@@ -20,7 +21,9 @@ impl TryFrom<u32> for InnerEncryptionAlgorithm {
         match value {
             INNER_ENCRYPTION_ALGORITHM_SALSA20 => Ok(InnerEncryptionAlgorithm::Salsa20),
             INNER_ENCRYPTION_ALGORITHM_CHACHA20 => Ok(InnerEncryptionAlgorithm::ChaCha20),
-            _ => Err(Kdbx4InnerHeaderError::UnknownInnerEncryptionAlgorithm(value)),
+            _ => Err(Kdbx4InnerHeaderError::UnknownInnerEncryptionAlgorithm(
+                value,
+            )),
         }
     }
 }

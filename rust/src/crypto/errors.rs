@@ -8,6 +8,8 @@ pub enum CryptoError {
     StreamCipherError(#[from] cipher::StreamCipherError),
     #[error("Unpad error")]
     UnpadError(#[from] block_padding::UnpadError),
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
     #[error("HMAC mismatch")]
     HmacMismatch,
 }

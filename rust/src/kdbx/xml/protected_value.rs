@@ -1,9 +1,9 @@
 use crate::{
     crypto::ciphers::StreamCipherExt,
-    kdbx::xml::entities::{Entry, Group, KeePassDocument, Value},
+    kdbx::xml::entities::{Entry, Group, KeePassFile, Value},
 };
 
-pub fn collect_protected_values_document(document: &mut KeePassDocument) {
+pub fn collect_protected_values_document(document: &mut KeePassFile) {
     collect_protected_values_group(&mut document.root.group, 0);
 }
 
@@ -46,7 +46,7 @@ fn process_protected_values(stream_offset: usize, entry: &mut Entry) -> usize {
 }
 
 pub fn encrypt_protected_value(
-    document: &mut KeePassDocument,
+    document: &mut KeePassFile,
     old_cipher: &mut Box<dyn StreamCipherExt>,
     new_cipher: &mut Box<dyn StreamCipherExt>,
 ) {
