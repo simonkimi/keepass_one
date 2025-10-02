@@ -15,6 +15,7 @@ hex-literal = "1.0.0"
 sxd-document = "0.3.2"
 sxd-xpath = "0.4.2"
 base64 = "0.22.1"
+sha1 = "0.10.6"
 sha2 = "0.10.9"
 aes = "0.8.4"
 generic-array = "0.14.7"
@@ -37,6 +38,8 @@ zeroize = { version = "1.8.1", features = ["derive"] }
 serde_with = { version = "3.9.0", features = ["macros"] }
 dashmap = "6.1.0"
 getrandom = { version = "0.3", features = ["std"] }
+url = "2.5.7"
+data-encoding = "2.6.0"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
