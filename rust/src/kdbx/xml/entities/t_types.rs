@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -261,40 +261,13 @@ impl<'de> Deserialize<'de> for TColor {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum TDateTime {
-    Base64Encoded(i64),
-    IsoDateTime(DateTime<Utc>),
+pub struct TDateTime {
+    pub value: Option<DateTime<Utc>>,
 }
 
-impl From<DateTime<Utc>> for TDateTime {
-    fn from(value: DateTime<Utc>) -> Self {
-        Self::IsoDateTime(value)
-    }
-}
-
-impl From<TDateTime> for Option<DateTime<Utc>> {
-    fn from(value: TDateTime) -> Self {
-        match value {
-            TDateTime::IsoDateTime(dt) => Some(dt),
-            TDateTime::Base64Encoded(_) => None, // 需要特殊处理转换为DateTime
-        }
-    }
-}
-
-impl From<TDateTime> for DateTime<Utc> {
-    fn from(value: TDateTime) -> Self {
-        match value {
-            TDateTime::IsoDateTime(dt) => dt,
-            TDateTime::Base64Encoded(seconds) => {
-                let base_date = chrono::NaiveDate::from_ymd_opt(1, 1, 1)
-                    .unwrap()
-                    .and_hms_opt(0, 0, 0)
-                    .unwrap();
-
-                let naive_dt = base_date + chrono::Duration::seconds(seconds);
-                DateTime::from_naive_utc_and_offset(naive_dt, Utc)
-            }
-        }
+impl Default for TDateTime {
+    fn default() -> Self {
+        Self { value: None }
     }
 }
 
@@ -303,15 +276,16 @@ impl Serialize for TDateTime {
     where
         S: serde::Serializer,
     {
-        let value = match self {
-            Self::Base64Encoded(seconds) => {
-                // 将i64转换为8字节的字节数组，然后进行Base64编码
-                let bytes = seconds.to_le_bytes();
-                base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes)
-            }
-            Self::IsoDateTime(dt) => dt.to_rfc3339(),
-        };
-        serializer.serialize_str(&value)
+        if let Some(value) = self.value {
+            let base_date = Utc.with_ymd_and_hms(1, 1, 1, 0, 0, 0).unwrap();
+            let seconds = value.signed_duration_since(base_date).num_seconds();
+            let bytes = seconds.to_le_bytes();
+            let encoded =
+                base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
+            serializer.serialize_str(&encoded)
+        } else {
+            serializer.serialize_str("")
+        }
     }
 }
 
@@ -321,29 +295,72 @@ impl<'de> Deserialize<'de> for TDateTime {
         D: serde::Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
-
-        // 首先尝试解析为ISO 8601日期时间格式
-        if let Ok(dt) = DateTime::parse_from_rfc3339(&value) {
-            return Ok(Self::IsoDateTime(dt.with_timezone(&Utc)));
+        if value.is_empty() {
+            return Ok(Self { value: None });
         }
-
-        // 如果失败，尝试解析为Base64编码的Int64
         if let Ok(decoded) =
             base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value)
         {
             if decoded.len() == 8 {
-                let bytes: [u8; 8] = decoded
-                    .try_into()
-                    .map_err(|_| D::Error::custom("Invalid Base64 length for TDateTime"))?;
+                let mut bytes = [0u8; 8];
+                bytes.copy_from_slice(&decoded);
                 let seconds = i64::from_le_bytes(bytes);
-                return Ok(Self::Base64Encoded(seconds));
+
+                // 基准日期：0001-01-01 00:00:00 UTC
+                let base_date = Utc.with_ymd_and_hms(1, 1, 1, 0, 0, 0).unwrap();
+
+                // 添加秒数得到目标日期
+                if let Some(target_date) =
+                    base_date.checked_add_signed(chrono::Duration::seconds(seconds))
+                {
+                    return Ok(Self {
+                        value: Some(target_date),
+                    });
+                } else {
+                    return Err(D::Error::custom(format!(
+                        "Invalid timestamp: {} seconds from base date would overflow",
+                        seconds
+                    )));
+                }
             }
         }
 
-        Err(D::Error::custom(format!(
-            "Invalid TDateTime format: {}. Expected ISO 8601 dateTime or Base64 encoded Int64",
-            value
-        )))
+        match DateTime::parse_from_rfc3339(&value) {
+            Ok(parsed_date) => Ok(Self {
+                value: Some(parsed_date.with_timezone(&Utc)),
+            }),
+            Err(_) => {
+                // 如果RFC3339解析失败，尝试其他常见的ISO 8601格式
+                if let Ok(parsed_date) = DateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%S%.fZ") {
+                    Ok(Self {
+                        value: Some(parsed_date.with_timezone(&Utc)),
+                    })
+                } else if let Ok(parsed_date) =
+                    DateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%SZ")
+                {
+                    Ok(Self {
+                        value: Some(parsed_date.with_timezone(&Utc)),
+                    })
+                } else if let Ok(_parsed_date) =
+                    DateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%S")
+                {
+                    // 假设没有时区信息的日期是UTC
+                    let naive_dt =
+                        chrono::NaiveDateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%S")
+                            .map_err(|e| {
+                                D::Error::custom(format!("Failed to parse datetime: {}", e))
+                            })?;
+                    Ok(Self {
+                        value: Some(Utc.from_utc_datetime(&naive_dt)),
+                    })
+                } else {
+                    Err(D::Error::custom(format!(
+                        "Invalid TDateTime format: {}. Expected Base64-encoded Int64 or xs:dateTime format",
+                        value
+                    )))
+                }
+            }
+        }
     }
 }
 

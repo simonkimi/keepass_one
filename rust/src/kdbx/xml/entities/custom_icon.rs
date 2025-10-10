@@ -6,7 +6,7 @@ use crate::kdbx::xml::entities::{TBase64Binary, TDateTime, TUuid};
 pub struct Icon {
     #[serde(rename = "UUID")]
     pub uuid: TUuid,
-    #[serde(rename = "LastModificationTime")]
+    #[serde(rename = "LastModificationTime", default)]
     pub last_modification_time: TDateTime,
     #[serde(rename = "Data")]
     pub data: TBase64Binary,

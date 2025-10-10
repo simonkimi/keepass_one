@@ -21,5 +21,5 @@ pub struct Item {
     #[serde(rename = "Value")]
     pub value: String,
     #[serde(rename = "LastModificationTime", default)]
-    pub last_modification_time: Option<TDateTime>,
+    pub last_modification_time: TDateTime,
 }

@@ -56,7 +56,17 @@ pub struct Entry {
     #[serde(default)]
     pub auto_type: Option<AutoType>,
     /// <https://keepass.info/help/v2/entry.html#hst>
-    #[serde(rename = "History")]
-    #[serde(default)]
+    #[serde(
+        rename = "History",
+        default,
+        skip_serializing_if = "should_skip_history"
+    )]
     pub history: Option<History>,
+}
+
+fn should_skip_history(history: &Option<History>) -> bool {
+    match history {
+        None => true,
+        Some(h) => h.entry.is_empty(),
+    }
 }

@@ -4,9 +4,9 @@ use crate::kdbx::xml::entities::{TBool, TDateTime};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Times {
-    #[serde(rename = "CreationTime")]
+    #[serde(rename = "CreationTime", default)]
     pub creation_time: TDateTime,
-    #[serde(rename = "LastModificationTime")]
+    #[serde(rename = "LastModificationTime", default)]
     pub last_modification_time: TDateTime,
     /// In general, last access times are not reliable, because an access is not considered to be a database change.
     ///
