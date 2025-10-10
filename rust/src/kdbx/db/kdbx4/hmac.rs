@@ -1,11 +1,14 @@
 use byteorder::{ByteOrder, LE};
 use generic_array::typenum::U64;
 use generic_array::GenericArray;
+use hex_literal::hex;
 
 use crate::crypto::errors::CryptoError;
 use crate::crypto::hash;
 
 const HMAC_BLOCK_SIZE: usize = 1024 * 1024; // 1MB
+const KDBX4_MAIN_HMAC_SUFFIX: [u8; 1] = hex!("01");
+const KDBX4_HEADER_HMAC_SUFFIX: [u8; 8] = hex!("FFFFFFFFFFFFFFFF");
 
 pub fn parse_hmac_block(
     data: &[u8],
@@ -104,6 +107,14 @@ pub fn write_hmac_block<W: std::io::Write + std::io::Seek>(
     writer.write_all(&block_length_buf)?;
 
     Ok(())
+}
+
+pub fn calc_kdbx4_hmac_key(salt: &[u8], transformed_key: &[u8]) -> GenericArray<u8, U64> {
+    hash::calculate_sha512_multiple(&[&salt, &transformed_key, &KDBX4_MAIN_HMAC_SUFFIX])
+}
+
+pub fn calc_kdbx4_header_hmac_key(hmac_key: &GenericArray<u8, U64>) -> GenericArray<u8, U64> {
+    hash::calculate_sha512_multiple(&[&KDBX4_HEADER_HMAC_SUFFIX, &hmac_key])
 }
 
 #[cfg(test)]

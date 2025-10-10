@@ -1,6 +1,8 @@
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
 
+use super::t_types::TBool;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     Protected {
@@ -14,7 +16,7 @@ pub enum Value {
 #[derive(Serialize, Deserialize)]
 struct ValueXml {
     #[serde(rename = "@Protected", skip_serializing_if = "Option::is_none")]
-    protected: Option<String>,
+    protected: Option<TBool>,
     #[serde(rename = "$text", default)]
     value: String,
 }
@@ -26,7 +28,7 @@ impl Serialize for Value {
     {
         match self {
             Self::Protected { ref value, .. } => ValueXml {
-                protected: Some("True".to_string()),
+                protected: Some(TBool { value: true }),
                 value: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, value),
             },
             Self::Unprotected(ref value) => ValueXml {
@@ -34,7 +36,7 @@ impl Serialize for Value {
                 value: value.clone(),
             },
             Self::WaitProtect(s) => {
-                return Err(serde::ser::Error::custom(format!("WaitProcess: {}", s)))
+                return Err(serde::ser::Error::custom(format!("WaitProtect: {}", s)))
             }
         }
         .serialize(serializer)
@@ -47,14 +49,18 @@ impl<'de> Deserialize<'de> for Value {
         D: serde::Deserializer<'de>,
     {
         let value = ValueXml::deserialize(deserializer)?;
-        if Some("True".to_string()) == value.protected {
-            let decoded =
-                base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value.value)
-                    .map_err(|e| D::Error::custom(format!("Failed to decode base64: {}", e)))?;
-            Ok(Self::Protected {
-                value: decoded,
-                offset: None,
-            })
+        if let Some(protected) = value.protected {
+            if protected.value {
+                let decoded =
+                    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value.value)
+                        .map_err(|e| D::Error::custom(format!("Failed to decode base64: {}", e)))?;
+                Ok(Self::Protected {
+                    value: decoded,
+                    offset: None,
+                })
+            } else {
+                Ok(Self::Unprotected(value.value))
+            }
         } else {
             Ok(Self::Unprotected(value.value))
         }

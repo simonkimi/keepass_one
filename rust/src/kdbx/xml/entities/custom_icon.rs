@@ -1,23 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-/// A custom icon.
-///
-/// 自定义图标
+use crate::kdbx::xml::entities::{TBase64Binary, TDateTime, TUuid};
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct Icon {
+    #[serde(rename = "UUID")]
+    pub uuid: TUuid,
+    #[serde(rename = "LastModificationTime")]
+    pub last_modification_time: TDateTime,
+    #[serde(rename = "Data")]
+    pub data: TBase64Binary,
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct CustomIcon {
-    /// The UUID of the custom icon.
-    ///
-    /// 自定义图标的UUID
-    #[serde(rename = "UUID")]
-    pub uuid: String,
-    /// The data of the custom icon (PNG, Base64-encoded).
-    ///
-    /// 自定义图标的数据 (PNG, Base64编码)
-    #[serde(rename = "Data")]
-    pub data: String,
-    /// The name of the custom icon.
-    ///
-    /// 自定义图标的名称
-    #[serde(rename = "Name")]
-    pub name: String,
+    #[serde(rename = "Icon", default)]
+    pub icon: Vec<Icon>,
 }

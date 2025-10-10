@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::kdbx::xml::entities::TDateTime;
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Default, Clone)]
 pub struct CustomData {
     #[serde(rename = "Item", default)]
@@ -18,4 +20,6 @@ pub struct Item {
     pub key: String,
     #[serde(rename = "Value")]
     pub value: String,
+    #[serde(rename = "LastModificationTime", default)]
+    pub last_modification_time: Option<TDateTime>,
 }

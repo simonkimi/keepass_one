@@ -2,7 +2,7 @@ use crate::crypto::hash;
 use crate::kdbx::db::kdbx4::config::Kdbx4Config;
 use crate::kdbx::db::kdbx4::errors::Kdbx4Error;
 use crate::kdbx::db::kdbx4::header::Kdbx4Header;
-use crate::kdbx::db::kdbx4::hmac::write_hmac_block;
+use crate::kdbx::db::kdbx4::hmac::{calc_kdbx4_header_hmac_key, calc_kdbx4_hmac_key, write_hmac_block};
 use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
 use crate::kdbx::xml::database::KeePassDatabase;
 use crate::utils::writer::WritableExt;
@@ -32,14 +32,8 @@ impl Kdbx4 {
             .kdf_parameters
             .get_kdf()
             .transform_key(key_hash)?;
-        let hmac_key = hash::calculate_sha512_multiple(&[
-            &header.config.master_salt_seed,
-            &transformed_key,
-            &hex!("01"),
-        ]);
-
-        let header_hmac_key =
-            hash::calculate_sha512_multiple(&[&hex!("FFFFFFFFFFFFFFFF"), &hmac_key]);
+        let hmac_key = calc_kdbx4_hmac_key(&header.config.master_salt_seed, &transformed_key);
+        let header_hmac_key = calc_kdbx4_header_hmac_key(&hmac_key);
 
         if header_hmac
             != hash::calculate_hmac_multiple(&[&header_bytes], &header_hmac_key)
@@ -105,14 +99,8 @@ impl Kdbx4 {
             .kdf_parameters
             .get_kdf()
             .transform_key(key_hash)?;
-        let hmac_key = hash::calculate_sha512_multiple(&[
-            &header.config.master_salt_seed,
-            &transformed_key,
-            &hex!("01"),
-        ]);
-
-        let header_hmac_key =
-            hash::calculate_sha512_multiple(&[&hex!("FFFFFFFFFFFFFFFF"), &hmac_key]);
+        let hmac_key = calc_kdbx4_hmac_key(&header.config.master_salt_seed, &transformed_key);
+        let header_hmac_key = calc_kdbx4_header_hmac_key(&hmac_key);
         let header_hmac = hash::calculate_hmac_multiple(&[&header_bytes], &header_hmac_key)?;
         writer.write_all(&header_hmac)?;
 
@@ -152,18 +140,18 @@ mod kdbx4_tests {
 
     #[test]
     fn test_kdbx4_open() -> anyhow::Result<()> {
-        let file_path = r#"/Users/simonxu/Project/test.kdbx"#;
+        let file_path = r#"F:\test.kdbx"#;
         let data = std::fs::read(file_path)?;
 
         let mut key = KdbxKey::new();
-        key.add_master_key("YAZ5pfd4bqz1yhk.tmv");
+        key.add_master_key("test123456");
         let key_hash = key.calc_key_hash()?;
         let kdbx = Kdbx4::open(&data, &key_hash)?;
 
         let new_config = kdbx.header.config.rekey();
 
         let mut new_key = KdbxKey::new();
-        new_key.add_master_key("test123456");
+        new_key.add_master_key("test1234567");
         let new_key_hash = new_key.calc_key_hash()?;
         let mut buffer = Vec::new();
         let mut writer = Cursor::new(&mut buffer);
@@ -171,7 +159,7 @@ mod kdbx4_tests {
 
         let new_kdbx = Kdbx4::open(&buffer, &new_key_hash)?;
         // 写入文件, 名称为test_save_kdbx4
-        std::fs::write("test_save_kdbx4.kdbx", &buffer)?;
+        std::fs::write("test_save_kdbx4_2.kdbx", &buffer)?;
         walk_group(
             &new_kdbx.database,
             "",

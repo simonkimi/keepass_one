@@ -35,8 +35,7 @@ impl Writable for KeePassFile {
         writer.write_all(xml_declaration.as_bytes())?;
         writer.write_all(b"\n")?;
         let mut serialized = String::new();
-        let mut serializer = quick_xml::se::Serializer::new(&mut serialized);
-        serializer.indent(' ', 4); // 设置缩进为4个空格
+        let serializer = quick_xml::se::Serializer::new(&mut serialized);
         self.serialize(serializer).unwrap();
         writer.write_all(serialized.as_bytes())?;
         Ok(())

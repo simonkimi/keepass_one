@@ -12,6 +12,7 @@ pub mod root;
 pub mod string_field;
 pub mod times;
 pub mod value;
+pub mod t_types;
 
 pub use auto_type::*;
 pub use custom_data::*;
@@ -27,3 +28,4 @@ pub use root::*;
 pub use string_field::*;
 pub use times::Times;
 pub use value::*;
+pub use t_types::*;

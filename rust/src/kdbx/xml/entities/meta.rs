@@ -1,6 +1,7 @@
-use serde::{Deserialize, Serialize};
-use crate::kdbx::xml::entities::memory_protection::MemoryProtection;
 use crate::kdbx::xml::entities::custom_data::CustomData;
+use crate::kdbx::xml::entities::memory_protection::MemoryProtection;
+use crate::kdbx::xml::entities::{CustomIcon, TBool, TColor, TDateTime, TOptionUuid};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Meta {
@@ -13,16 +14,16 @@ pub struct Meta {
     ///
     /// 数据库设置（存储在Meta元素中）的最后更改日期/时间。
     #[serde(rename = "SettingsChanged")]
-    pub settings_changed: String,
+    pub settings_changed: TDateTime,
     #[serde(rename = "DatabaseName")]
     pub database_name: String,
     #[serde(rename = "DatabaseNameChanged")]
-    pub database_name_changed: String,
+    pub database_name_changed: TDateTime,
     #[serde(rename = "DatabaseDescription")]
     #[serde(default)]
     pub database_description: String,
     #[serde(rename = "DatabaseDescriptionChanged")]
-    pub database_description_changed: String,
+    pub database_description_changed: TDateTime,
     /// User name that is used by default for new entries.
     ///
     /// 默认用于新条目的用户名。
@@ -30,7 +31,7 @@ pub struct Meta {
     #[serde(default)]
     pub default_user_name: String,
     #[serde(rename = "DefaultUserNameChanged")]
-    pub default_user_name_changed: String,
+    pub default_user_name_changed: TDateTime,
     /// Number of days until history entries are deleted in a database maintenance operation.
     ///
     /// 在数据库维护操作中删除历史记录条目之前的天数。
@@ -41,12 +42,12 @@ pub struct Meta {
     /// 数据库颜色。用户界面可以使用此颜色对元素进行着色，以便用户快速识别数据库。
     #[serde(rename = "Color")]
     #[serde(default)]
-    pub color: String,
+    pub color: TColor,
     /// Last date/time when the master key has been changed.
     ///
     /// 主密钥最后更改的日期/时间。
     #[serde(rename = "MasterKeyChanged")]
-    pub master_key_changed: String,
+    pub master_key_changed: TDateTime,
     /// Number of days until a change of the master key is recommended. -1 means never.
     ///
     /// 建议更改主密钥之前的天数。-1表示永不。
@@ -59,19 +60,21 @@ pub struct Meta {
     pub master_key_change_force: i32,
     #[serde(rename = "MemoryProtection")]
     pub memory_protection: MemoryProtection,
+    #[serde(rename = "CustomIcons")]
+    pub custom_icons: CustomIcon,
     #[serde(rename = "RecycleBinEnabled")]
-    pub recycle_bin_enabled: String,
+    pub recycle_bin_enabled: TBool,
     /// UUID of the group that is used as recycle bin. Zero UUID = create new group when necessary.
     ///
     /// 用作回收站的组的UUID。零UUID = 必要时创建新组。
-    #[serde(rename = "RecycleBinUUID")]
-    pub recycle_bin_uuid: String,
+    #[serde(rename = "RecycleBinUUID", default)]
+    pub recycle_bin_uuid: TOptionUuid,
     #[serde(rename = "RecycleBinChanged")]
-    pub recycle_bin_changed: String,
-    #[serde(rename = "EntryTemplatesGroup")]
-    pub entry_templates_group: String,
+    pub recycle_bin_changed: TDateTime,
+    #[serde(rename = "EntryTemplatesGroup", default)]
+    pub entry_templates_group: TOptionUuid,
     #[serde(rename = "EntryTemplatesGroupChanged")]
-    pub entry_templates_group_changed: String,
+    pub entry_templates_group_changed: TDateTime,
     /// Maximum number of history entries that each entry may have. -1 means unlimited.
     ///
     /// 每个条目可能拥有的最大历史记录条目数。-1表示无限制。
@@ -82,10 +85,10 @@ pub struct Meta {
     /// 每个条目历史记录的最大估计大小（在进程内存中），以字节为单位。-1表示无限制。
     #[serde(rename = "HistoryMaxSize")]
     pub history_max_size: i64,
-    #[serde(rename = "LastSelectedGroup")]
-    pub last_selected_group: String,
-    #[serde(rename = "LastTopVisibleGroup")]
-    pub last_top_visible_group: String,
+    #[serde(rename = "LastSelectedGroup", default)]
+    pub last_selected_group: TOptionUuid,
+    #[serde(rename = "LastTopVisibleGroup", default)]
+    pub last_top_visible_group: TOptionUuid,
     #[serde(rename = "CustomData")]
     #[serde(default)]
     pub custom_data: Option<CustomData>,
