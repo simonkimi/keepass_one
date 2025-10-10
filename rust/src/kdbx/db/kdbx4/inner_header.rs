@@ -124,12 +124,12 @@ impl Kdbx4InnerEncryption {
     }
 
     // 生成一个新的内层加密
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, std::io::Error> {
         let mut inner_encryption_key = vec![0; INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20];
-        getrandom::fill(&mut inner_encryption_key).unwrap();
-        Self {
+        getrandom::fill(&mut inner_encryption_key)?;
+        Ok(Self {
             inner_encryption_algorithm: InnerEncryptionAlgorithm::ChaCha20,
             inner_encryption_key,
-        }
+        })
     }
 }

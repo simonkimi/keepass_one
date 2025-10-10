@@ -44,14 +44,14 @@ impl KeePassDatabase {
                         .map_err(KdbxDatabaseError::ProtectedValueDecryptError)?;
                     Ok(String::from_utf8_lossy(&data).to_string())
                 } else {
-                    Ok(String::from_utf8_lossy(&value).to_string())
+                    Err(KdbxDatabaseError::ProtectedValueOffsetNotFound)
                 }
             }
         }
     }
 
-    pub fn encrypt_database(&self) -> Result<KeePassDatabase, KdbxDatabaseError> {
-        let new_inner_header = self.inner_header.copy_with(Kdbx4InnerEncryption::new());
+    pub fn encrypt_database(&self) -> Result<KeePassDatabase, std::io::Error> {
+        let new_inner_header = self.inner_header.copy_with(Kdbx4InnerEncryption::new()?);
         let mut old_cipher = self.inner_header.encryption.get_stream_cipher();
         let mut new_cipher = new_inner_header.encryption.get_stream_cipher();
 

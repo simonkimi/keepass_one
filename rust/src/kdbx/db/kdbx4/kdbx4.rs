@@ -148,7 +148,7 @@ mod kdbx4_tests {
         let key_hash = key.calc_key_hash()?;
         let kdbx = Kdbx4::open(&data, &key_hash)?;
 
-        let new_config = kdbx.header.config.rekey();
+        let new_config = kdbx.header.config.rekey()?;
 
         let mut new_key = KdbxKey::new();
         new_key.add_master_key("test1234567");

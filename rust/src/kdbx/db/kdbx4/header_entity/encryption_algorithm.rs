@@ -49,14 +49,14 @@ impl EncryptionAlgorithm {
         }
     }
 
-    pub fn get_random_iv(&self) -> Vec<u8> {
+    pub fn get_random_iv(&self) -> Result<Vec<u8>, std::io::Error> {
         let mut iv = match self {
             EncryptionAlgorithm::Aes256 => vec![0; 16],
             EncryptionAlgorithm::ChaCha20 => vec![0; 12],
             EncryptionAlgorithm::Twofish => vec![0; 16],
         };
-        getrandom::fill(&mut iv);
-        iv
+        getrandom::fill(&mut iv)?;
+        Ok(iv)
     }
 }
 

@@ -13,16 +13,16 @@ pub struct Kdbx4Config {
 }
 
 impl Kdbx4Config {
-    pub fn rekey(&self) -> Self {
+    pub fn rekey(&self) -> Result<Self, std::io::Error> {
         let mut master_salt_seed = [0; 32];
-        getrandom::fill(&mut master_salt_seed).unwrap();
+        getrandom::fill(&mut master_salt_seed)?;
 
-        Self {
+        Ok(Self {
             master_salt_seed,
-            encryption_iv: self.encryption_algorithm.get_random_iv(),
+            encryption_iv: self.encryption_algorithm.get_random_iv()?,
             encryption_algorithm: self.encryption_algorithm.clone(),
             compression_config: self.compression_config.clone(),
-            kdf_parameters: self.kdf_parameters.rekey(),
-        }
+            kdf_parameters: self.kdf_parameters.rekey()?,
+        })
     }
 }

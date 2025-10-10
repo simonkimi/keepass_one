@@ -99,15 +99,15 @@ impl KdfConfig {
         }
     }
 
-    pub fn rekey(&self) -> Self {
+    pub fn rekey(&self) -> Result<Self, std::io::Error> {
         match self {
             KdfConfig::Aes { rounds, .. } => {
                 let mut salt = [0; 32];
-                getrandom::fill(&mut salt).unwrap();
-                KdfConfig::Aes {
+                getrandom::fill(&mut salt)?;
+                Ok(KdfConfig::Aes {
                     salt,
                     rounds: *rounds,
-                }
+                })
             }
             KdfConfig::Argon2 {
                 version,
@@ -118,15 +118,15 @@ impl KdfConfig {
                 ..
             } => {
                 let mut salt = vec![0; 32];
-                getrandom::fill(&mut salt).unwrap();
-                KdfConfig::Argon2 {
+                getrandom::fill(&mut salt)?;
+                Ok(KdfConfig::Argon2 {
                     version: *version,
                     salt: salt,
                     iterations: *iterations,
                     memory: *memory,
                     parallelism: *parallelism,
                     variant: *variant,
-                }
+                })
             }
         }
     }
