@@ -1,14 +1,17 @@
 use crate::crypto::hash;
+use crate::kdbx::config::MemoryProtectConfig;
 use crate::kdbx::db::kdbx4::config::Kdbx4Config;
 use crate::kdbx::db::kdbx4::errors::Kdbx4Error;
 use crate::kdbx::db::kdbx4::header::Kdbx4Header;
-use crate::kdbx::db::kdbx4::hmac::{calc_kdbx4_header_hmac_key, calc_kdbx4_hmac_key, write_hmac_block};
+use crate::kdbx::db::kdbx4::hmac::{
+    calc_kdbx4_header_hmac_key, calc_kdbx4_hmac_key, write_hmac_block,
+};
 use crate::kdbx::db::kdbx4::inner_header::Kdbx4InnerHeader;
 use crate::kdbx::xml::database::KeePassDatabase;
+use crate::kdbx::xml::errors::KdbxSaveError;
 use crate::utils::writer::WritableExt;
 use crate::{crypto, kdbx::db::kdbx4::hmac::parse_hmac_block};
 use generic_array::{typenum::U32, GenericArray};
-use hex_literal::hex;
 
 pub struct Kdbx4 {
     pub key_hash: GenericArray<u8, U32>,
@@ -17,7 +20,11 @@ pub struct Kdbx4 {
 }
 
 impl Kdbx4 {
-    pub fn open(data: &[u8], key_hash: &GenericArray<u8, U32>) -> Result<Kdbx4, Kdbx4Error> {
+    pub fn open(
+        data: &[u8],
+        key_hash: &GenericArray<u8, U32>,
+        config: &MemoryProtectConfig,
+    ) -> Result<Kdbx4, Kdbx4Error> {
         let (header, header_size) = Kdbx4Header::try_from(data)?;
         let header_bytes = &data[..header_size];
         let header_sha256 = &data[header_size..header_size + 32];
@@ -73,7 +80,7 @@ impl Kdbx4 {
         Ok(Self {
             key_hash: key_hash.clone(),
             header,
-            database: KeePassDatabase::try_from(xml, inner_header)?,
+            database: KeePassDatabase::try_from(xml, inner_header, config)?,
         })
     }
 
@@ -83,7 +90,7 @@ impl Kdbx4 {
         key_hash: &GenericArray<u8, U32>,
         config: Kdbx4Config,
         writer: &mut W,
-    ) -> anyhow::Result<()>
+    ) -> Result<(), KdbxSaveError>
     where
         W: std::io::Write + std::io::Seek,
     {
@@ -133,6 +140,7 @@ mod kdbx4_tests {
     use std::io::Cursor;
 
     use crate::kdbx::{
+        config::MemoryProtectConfig,
         db::kdbx4::kdbx4::Kdbx4,
         keys::KdbxKey,
         xml::{database::KeePassDatabase, entities},
@@ -140,13 +148,18 @@ mod kdbx4_tests {
 
     #[test]
     fn test_kdbx4_open() -> anyhow::Result<()> {
+        let config = MemoryProtectConfig {
+            enable_memory_crypt: true,
+            enable_mlock: true,
+        };
+
         let file_path = r#"F:\test.kdbx"#;
         let data = std::fs::read(file_path)?;
 
         let mut key = KdbxKey::new();
         key.add_master_key("test123456");
         let key_hash = key.calc_key_hash()?;
-        let kdbx = Kdbx4::open(&data, &key_hash)?;
+        let kdbx = Kdbx4::open(&data, &key_hash, &config)?;
 
         let new_config = kdbx.header.config.rekey()?;
 
@@ -157,7 +170,7 @@ mod kdbx4_tests {
         let mut writer = Cursor::new(&mut buffer);
         kdbx.save_with_config(&new_key_hash, new_config, &mut writer)?;
 
-        let new_kdbx = Kdbx4::open(&buffer, &new_key_hash)?;
+        let new_kdbx = Kdbx4::open(&buffer, &new_key_hash, &config)?;
         // 写入文件, 名称为test_save_kdbx4
         std::fs::write("test_save_kdbx4_2.kdbx", &buffer)?;
         walk_group(

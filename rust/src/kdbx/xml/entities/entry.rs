@@ -5,8 +5,9 @@ use crate::kdbx::xml::entities::string_field::ProtectedString;
 use crate::kdbx::xml::entities::times::Times;
 use crate::kdbx::xml::entities::{TBool, TColor, TOptionUuid, TUuid};
 use serde::{Deserialize, Serialize};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct Entry {
     #[serde(rename = "UUID")]
     pub uuid: TUuid,

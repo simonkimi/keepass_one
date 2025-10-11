@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::kdbx::xml::entities::{TBool, TDateTime};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct Times {
     #[serde(rename = "CreationTime", default)]
     pub creation_time: TDateTime,

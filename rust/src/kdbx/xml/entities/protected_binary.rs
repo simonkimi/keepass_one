@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// A protected binary.
 ///
@@ -27,7 +28,7 @@ pub struct TProtectedBinaryDef {
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct ProtectedBinary {
     #[serde(rename = "Key")]
     pub key: String,
@@ -35,7 +36,7 @@ pub struct ProtectedBinary {
     pub value: ProtectedBinaryValue,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct ProtectedBinaryValue {
     /// Reference to a binary content stored in the inner header (KDBX file) or in the Meta/Binaries element (unencrypted XML file).
     ///

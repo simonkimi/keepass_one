@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 use crate::kdbx::xml::entities::times::Times;
 use crate::kdbx::xml::entities::entry::Entry;
 use crate::kdbx::xml::entities::{TBool, TNullableBoolEx, TOptionUuid, TUuid};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct Group {
     #[serde(rename = "UUID")]
     pub uuid: TUuid,

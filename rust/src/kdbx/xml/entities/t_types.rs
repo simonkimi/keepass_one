@@ -2,10 +2,15 @@ use chrono::{DateTime, TimeZone, Utc};
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TUuid {
     pub uuid: Uuid,
+}
+
+impl Zeroize for TUuid {
+    fn zeroize(&mut self) {}
 }
 
 impl Serialize for TUuid {
@@ -37,6 +42,12 @@ impl<'de> Deserialize<'de> for TUuid {
 #[derive(Debug, PartialEq, Clone)]
 pub struct TOptionUuid {
     pub uuid: Option<Uuid>,
+}
+
+impl Zeroize for TOptionUuid {
+    fn zeroize(&mut self) {
+        self.uuid = None;
+    }
 }
 
 impl Default for TOptionUuid {
@@ -79,7 +90,7 @@ impl<'de> Deserialize<'de> for TOptionUuid {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct TBool {
     pub value: bool,
 }
@@ -118,7 +129,7 @@ impl<'de> Deserialize<'de> for TBool {
 }
 
 /// 可空布尔值扩展，支持 Null/null/False/false/True/true 值
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub enum TNullableBoolEx {
     Null,
     False,
@@ -178,7 +189,7 @@ impl<'de> Deserialize<'de> for TNullableBoolEx {
 }
 
 /// 颜色值，支持十六进制CSS颜色格式（#RRGGBB）或空字符串
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub enum TColor {
     /// 十六进制颜色值，格式为 #RRGGBB
     Hex(String),
@@ -208,15 +219,6 @@ impl From<Option<String>> for TColor {
             Some(color) if color.is_empty() => Self::Default,
             Some(color) => Self::Hex(color),
             None => Self::Default,
-        }
-    }
-}
-
-impl From<TColor> for Option<String> {
-    fn from(value: TColor) -> Self {
-        match value {
-            TColor::Hex(color) => Some(color),
-            TColor::Default => None,
         }
     }
 }
@@ -264,6 +266,14 @@ impl<'de> Deserialize<'de> for TColor {
 pub struct TDateTime {
     pub value: Option<DateTime<Utc>>,
 }
+
+impl Zeroize for TDateTime {
+    fn zeroize(&mut self) {
+        self.value = None;
+    }
+}
+
+impl ZeroizeOnDrop for TDateTime {}
 
 impl Default for TDateTime {
     fn default() -> Self {
@@ -365,32 +375,9 @@ impl<'de> Deserialize<'de> for TDateTime {
 }
 
 /// 非负整数，值必须大于等于0
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct TNonNegativeInt {
     pub value: i32,
-}
-
-impl From<i32> for TNonNegativeInt {
-    fn from(value: i32) -> Self {
-        Self { value }
-    }
-}
-
-impl From<TNonNegativeInt> for i32 {
-    fn from(value: TNonNegativeInt) -> Self {
-        value.value
-    }
-}
-
-impl TNonNegativeInt {
-    /// 创建一个新的非负整数，如果值小于0则返回错误
-    pub fn new(value: i32) -> Result<Self, String> {
-        if value >= 0 {
-            Ok(Self { value })
-        } else {
-            Err(format!("TNonNegativeInt value must be >= 0, got {}", value))
-        }
-    }
 }
 
 impl Serialize for TNonNegativeInt {
@@ -423,7 +410,7 @@ impl<'de> Deserialize<'de> for TNonNegativeInt {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct TBase64Binary {
     pub data: Vec<u8>,
 }

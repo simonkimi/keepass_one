@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::kdbx::xml::entities::TDateTime;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Default, Clone)]
+use zeroize::{Zeroize, ZeroizeOnDrop};
+#[derive(Debug, Serialize, Deserialize, PartialEq, Default, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct CustomData {
     #[serde(rename = "Item", default)]
     pub item: Vec<Item>,
@@ -14,7 +15,7 @@ pub struct CustomData {
 /// The key should be unique, e.g. "PluginName_ItemName".
 ///
 /// 密钥应该是唯一的，例如"PluginName_ItemName"。
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct Item {
     #[serde(rename = "Key")]
     pub key: String,

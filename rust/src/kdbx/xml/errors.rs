@@ -1,6 +1,8 @@
 use thiserror::Error;
 
 use crate::crypto::errors::CryptoError;
+use crate::crypto::kdf::KdfError;
+use crate::crypto::memory_crypt::SecureDataError;
 
 #[derive(Debug, Error)]
 
@@ -13,4 +15,22 @@ pub enum KdbxDatabaseError {
 
     #[error("Protected value decrypt error")]
     ProtectedValueDecryptError(#[from] CryptoError),
+
+    #[error("Secure data error")]
+    SecureDataError(#[from] SecureDataError),
+}
+
+#[derive(Debug, Error)]
+pub enum KdbxSaveError {
+    #[error("IO error")]
+    Io(#[from] std::io::Error),
+
+    #[error("Cipher error")]
+    CipherError(#[from] CryptoError),
+
+    #[error("Secure data error")]
+    SecureDataError(#[from] SecureDataError),
+
+    #[error("KDF error")]
+    KdfError(#[from] KdfError),
 }

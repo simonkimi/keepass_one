@@ -1,11 +1,10 @@
 use crate::{
     kdbx::{
-        db::kdbx4::inner_header::{Kdbx4InnerEncryption, Kdbx4InnerHeader},
-        xml::{
+        config::MemoryProtectConfig, db::kdbx4::inner_header::{Kdbx4InnerEncryption, Kdbx4InnerHeader}, xml::{
             entities::{KeePassFile, Value},
-            errors::KdbxDatabaseError,
+            errors::{KdbxDatabaseError, KdbxSaveError},
             protected_value,
-        },
+        }
     },
     utils::writer::Writable,
 };
@@ -23,9 +22,9 @@ impl KeePassDatabase {
         }
     }
 
-    pub fn try_from(xml: &[u8], inner_header: Kdbx4InnerHeader) -> Result<Self, KdbxDatabaseError> {
+    pub fn try_from(xml: &[u8], inner_header: Kdbx4InnerHeader, config: &MemoryProtectConfig) -> Result<Self, KdbxDatabaseError> {
         let mut document: KeePassFile = quick_xml::de::from_reader(xml)?;
-        protected_value::collect_protected_values_document(&mut document);
+        protected_value::collect_protected_values_document(&mut document, config)?;
         Ok(Self {
             document,
             inner_header,
@@ -40,7 +39,7 @@ impl KeePassDatabase {
                 if let Some(offset) = offset {
                     let mut cipher = self.inner_header.encryption.get_stream_cipher();
                     let data = cipher
-                        .decrypt_at_offset(*offset, value)
+                        .decrypt_at_offset(*offset, &value.unsecure()?)
                         .map_err(KdbxDatabaseError::ProtectedValueDecryptError)?;
                     Ok(String::from_utf8_lossy(&data).to_string())
                 } else {
@@ -50,7 +49,7 @@ impl KeePassDatabase {
         }
     }
 
-    pub fn encrypt_database(&self) -> Result<KeePassDatabase, std::io::Error> {
+    pub fn encrypt_database(&self) -> Result<KeePassDatabase, KdbxSaveError> {
         let new_inner_header = self.inner_header.copy_with(Kdbx4InnerEncryption::new()?);
         let mut old_cipher = self.inner_header.encryption.get_stream_cipher();
         let mut new_cipher = new_inner_header.encryption.get_stream_cipher();
@@ -60,7 +59,7 @@ impl KeePassDatabase {
             &mut new_document,
             &mut old_cipher,
             &mut new_cipher,
-        );
+        )?;
         Ok(Self {
             document: new_document,
             inner_header: new_inner_header,

@@ -4,12 +4,13 @@ use crate::kdbx::xml::entities::root::Root;
 use crate::kdbx::xml::{entities::meta::Meta, errors::KdbxDatabaseError};
 use crate::utils::writer::Writable;
 use serde::{Deserialize, Serialize};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// KDBX 4.1 XML Schema.
 ///
 /// Copyright (C) 2007-2025 Dominik Reichl.
 /// <https://keepass.info/help/kb/kdbx.html>
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
 pub struct KeePassFile {
     #[serde(rename = "Meta")]
     pub meta: Meta,
