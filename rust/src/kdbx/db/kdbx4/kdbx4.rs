@@ -153,7 +153,7 @@ mod kdbx4_tests {
             enable_mlock: true,
         };
 
-        let file_path = r#"F:\test.kdbx"#;
+        let file_path = r#"/Users/simonxu/Project/test.kdbx"#;
         let data = std::fs::read(file_path)?;
 
         let mut key = KdbxKey::new();

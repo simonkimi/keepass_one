@@ -117,16 +117,15 @@ pub mod memory_crypt {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(unix)]
 pub mod memory_crypt {
-    pub fn crypt_memory(data: &[u8]) -> Result<Vec<u8>, windows::core::Error> {
+    use crate::crypto::memory_crypt::SecureDataError;
+
+    pub fn crypt_memory(data: &[u8]) -> Result<Vec<u8>, SecureDataError> {
         Ok(data.to_vec())
     }
 
-    pub fn uncrypt_memory(
-        data: &[u8],
-        original_len: usize,
-    ) -> Result<Vec<u8>, windows::core::Error> {
+    pub fn uncrypt_memory(data: &[u8], original_len: usize) -> Result<Vec<u8>, SecureDataError> {
         Ok(data.to_vec())
     }
 
@@ -136,7 +135,7 @@ pub mod memory_crypt {
         }
 
         unsafe {
-            let ptr = data.as_mut_ptr();
+            let ptr = data.as_mut_ptr() as *const std::ffi::c_void;
             let len = data.len();
 
             if libc::mlock(ptr, len) != 0 {
@@ -176,7 +175,7 @@ pub mod memory_crypt {
         }
 
         unsafe {
-            let ptr = data.as_ptr();
+            let ptr = data.as_ptr() as *const std::ffi::c_void;
             let len = data.len();
             if libc::munlock(ptr, len) != 0 {
                 eprintln!(
