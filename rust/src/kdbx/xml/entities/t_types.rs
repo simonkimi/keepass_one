@@ -5,9 +5,7 @@ use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct TUuid {
-    pub uuid: Uuid,
-}
+pub struct TUuid(Uuid);
 
 impl Zeroize for TUuid {
     fn zeroize(&mut self) {}
@@ -20,7 +18,7 @@ impl Serialize for TUuid {
     {
         let encoded = base64::Engine::encode(
             &base64::engine::general_purpose::STANDARD,
-            self.uuid.as_bytes(),
+            self.0.as_bytes(),
         );
         serializer.serialize_str(&encoded)
     }
@@ -35,24 +33,22 @@ impl<'de> Deserialize<'de> for TUuid {
             .map_err(|e| D::Error::custom(format!("Failed to decode base64: {} {}", value, e)))?;
         let uuid = Uuid::from_slice(&decoded)
             .map_err(|e| D::Error::custom(format!("Failed to parse UUID: {} {}", value, e)))?;
-        Ok(Self { uuid })
+        Ok(Self(uuid))
     }
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct TOptionUuid {
-    pub uuid: Option<Uuid>,
-}
+pub struct TOptionUuid(Option<Uuid>);
 
 impl Zeroize for TOptionUuid {
     fn zeroize(&mut self) {
-        self.uuid = None;
+        self.0 = None;
     }
 }
 
 impl Default for TOptionUuid {
     fn default() -> Self {
-        Self { uuid: None }
+        Self(None)
     }
 }
 
@@ -61,7 +57,7 @@ impl Serialize for TOptionUuid {
     where
         S: serde::Serializer,
     {
-        if let Some(uuid) = self.uuid {
+        if let Some(uuid) = self.0 {
             let encoded =
                 base64::Engine::encode(&base64::engine::general_purpose::STANDARD, uuid.as_bytes());
             serializer.serialize_str(&encoded)
@@ -79,25 +75,29 @@ impl<'de> Deserialize<'de> for TOptionUuid {
         let value = String::deserialize(deserializer)?;
 
         if value.is_empty() {
-            return Ok(Self { uuid: None });
+            return Ok(Self(None));
         }
 
         let decoded = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value)
             .map_err(|e| D::Error::custom(format!("Failed to decode base64: {} {}", value, e)))?;
         let uuid = Uuid::from_slice(&decoded)
             .map_err(|e| D::Error::custom(format!("Failed to parse UUID: {} {}", value, e)))?;
-        Ok(Self { uuid: Some(uuid) })
+        Ok(Self(Some(uuid)))
     }
 }
 
 #[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
-pub struct TBool {
-    pub value: bool,
-}
+pub struct TBool(bool);
 
 impl From<bool> for TBool {
     fn from(value: bool) -> Self {
-        Self { value }
+        Self(value)
+    }
+}
+
+impl Into<bool> for TBool {
+    fn into(self) -> bool {
+        self.0
     }
 }
 
@@ -106,7 +106,7 @@ impl Serialize for TBool {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(if self.value { "True" } else { "False" })
+        serializer.serialize_str(if self.0 { "True" } else { "False" })
     }
 }
 
@@ -117,9 +117,9 @@ impl<'de> Deserialize<'de> for TBool {
     {
         let value = String::deserialize(deserializer)?;
         match value.as_str() {
-            "" => Ok(Self { value: false }),
-            "True" | "true" => Ok(Self { value: true }),
-            "False" | "false" => Ok(Self { value: false }),
+            "" => Ok(Self(false)),
+            "True" | "true" => Ok(Self(true)),
+            "False" | "false" => Ok(Self(false)),
             _ => Err(D::Error::custom(format!(
                 "Invalid TBool value: {}. Expected 'True' or 'False'",
                 value
@@ -263,13 +263,11 @@ impl<'de> Deserialize<'de> for TColor {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct TDateTime {
-    pub value: Option<DateTime<Utc>>,
-}
+pub struct TDateTime(Option<DateTime<Utc>>);
 
 impl Zeroize for TDateTime {
     fn zeroize(&mut self) {
-        self.value = None;
+        self.0 = None;
     }
 }
 
@@ -277,7 +275,7 @@ impl ZeroizeOnDrop for TDateTime {}
 
 impl Default for TDateTime {
     fn default() -> Self {
-        Self { value: None }
+        Self(None)
     }
 }
 
@@ -286,7 +284,7 @@ impl Serialize for TDateTime {
     where
         S: serde::Serializer,
     {
-        if let Some(value) = self.value {
+        if let Some(value) = self.0 {
             let base_date = Utc.with_ymd_and_hms(1, 1, 1, 0, 0, 0).unwrap();
             let seconds = value.signed_duration_since(base_date).num_seconds();
             let bytes = seconds.to_le_bytes();
@@ -306,7 +304,7 @@ impl<'de> Deserialize<'de> for TDateTime {
     {
         let value = String::deserialize(deserializer)?;
         if value.is_empty() {
-            return Ok(Self { value: None });
+            return Ok(Self(None));
         }
         if let Ok(decoded) =
             base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value)
@@ -323,9 +321,7 @@ impl<'de> Deserialize<'de> for TDateTime {
                 if let Some(target_date) =
                     base_date.checked_add_signed(chrono::Duration::seconds(seconds))
                 {
-                    return Ok(Self {
-                        value: Some(target_date),
-                    });
+                    return Ok(Self(Some(target_date)));
                 } else {
                     return Err(D::Error::custom(format!(
                         "Invalid timestamp: {} seconds from base date would overflow",
@@ -336,21 +332,15 @@ impl<'de> Deserialize<'de> for TDateTime {
         }
 
         match DateTime::parse_from_rfc3339(&value) {
-            Ok(parsed_date) => Ok(Self {
-                value: Some(parsed_date.with_timezone(&Utc)),
-            }),
+            Ok(parsed_date) => Ok(Self(Some(parsed_date.with_timezone(&Utc)))),
             Err(_) => {
                 // 如果RFC3339解析失败，尝试其他常见的ISO 8601格式
                 if let Ok(parsed_date) = DateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%S%.fZ") {
-                    Ok(Self {
-                        value: Some(parsed_date.with_timezone(&Utc)),
-                    })
+                    Ok(Self(Some(parsed_date.with_timezone(&Utc))))
                 } else if let Ok(parsed_date) =
                     DateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%SZ")
                 {
-                    Ok(Self {
-                        value: Some(parsed_date.with_timezone(&Utc)),
-                    })
+                    Ok(Self(Some(parsed_date.with_timezone(&Utc))))
                 } else if let Ok(_parsed_date) =
                     DateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%S")
                 {
@@ -360,9 +350,7 @@ impl<'de> Deserialize<'de> for TDateTime {
                             .map_err(|e| {
                                 D::Error::custom(format!("Failed to parse datetime: {}", e))
                             })?;
-                    Ok(Self {
-                        value: Some(Utc.from_utc_datetime(&naive_dt)),
-                    })
+                    Ok(Self(Some(Utc.from_utc_datetime(&naive_dt))))
                 } else {
                     Err(D::Error::custom(format!(
                         "Invalid TDateTime format: {}. Expected Base64-encoded Int64 or xs:dateTime format",
@@ -376,16 +364,14 @@ impl<'de> Deserialize<'de> for TDateTime {
 
 /// 非负整数，值必须大于等于0
 #[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
-pub struct TNonNegativeInt {
-    pub value: i32,
-}
+pub struct TNonNegativeInt(i32);
 
 impl Serialize for TNonNegativeInt {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.value.to_string())
+        serializer.serialize_str(&self.0.to_string())
     }
 }
 
@@ -400,7 +386,7 @@ impl<'de> Deserialize<'de> for TNonNegativeInt {
             .map_err(|e| D::Error::custom(format!("Failed to parse TNonNegativeInt: {}", e)))?;
 
         if int_value >= 0 {
-            Ok(Self { value: int_value })
+            Ok(Self(int_value))
         } else {
             Err(D::Error::custom(format!(
                 "TNonNegativeInt value must be >= 0, got {}",
@@ -411,17 +397,14 @@ impl<'de> Deserialize<'de> for TNonNegativeInt {
 }
 
 #[derive(Debug, PartialEq, Clone, Zeroize, ZeroizeOnDrop)]
-pub struct TBase64Binary {
-    pub data: Vec<u8>,
-}
+pub struct TBase64Binary(Vec<u8>);
 
 impl Serialize for TBase64Binary {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        let encoded =
-            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &self.data);
+        let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &self.0);
         serializer.serialize_str(&encoded)
     }
 }
@@ -434,6 +417,6 @@ impl<'de> Deserialize<'de> for TBase64Binary {
         let value = String::deserialize(deserializer)?;
         let data = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &value)
             .map_err(|e| D::Error::custom(format!("Failed to decode base64: {}", e)))?;
-        Ok(Self { data })
+        Ok(Self(data))
     }
 }

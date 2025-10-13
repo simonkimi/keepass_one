@@ -36,7 +36,7 @@ impl Serialize for Value {
                     .map_err(|e| serde::ser::Error::custom(format!("Failed to unsecure: {}", e)))?;
 
                 ValueXml {
-                    protected: Some(TBool { value: true }),
+                    protected: Some(true.into()),
                     value: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, data),
                 }
             }
@@ -59,7 +59,7 @@ impl<'de> Deserialize<'de> for Value {
     {
         let value = ValueXml::deserialize(deserializer)?;
         if let Some(protected) = value.protected {
-            if protected.value {
+            if protected.into() {
                 let decoded = Zeroizing::new(
                     base64::Engine::decode(
                         &base64::engine::general_purpose::STANDARD,
