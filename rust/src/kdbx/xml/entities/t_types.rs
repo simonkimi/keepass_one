@@ -95,8 +95,8 @@ impl From<bool> for TBool {
     }
 }
 
-impl Into<bool> for TBool {
-    fn into(self) -> bool {
+impl TBool {
+    pub fn value(&self) -> bool {
         self.0
     }
 }

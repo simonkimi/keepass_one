@@ -59,7 +59,7 @@ impl<'de> Deserialize<'de> for Value {
     {
         let value = ValueXml::deserialize(deserializer)?;
         if let Some(protected) = value.protected {
-            if protected.into() {
+            if protected.value() {
                 let decoded = Zeroizing::new(
                     base64::Engine::decode(
                         &base64::engine::general_purpose::STANDARD,
