@@ -12,6 +12,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
+      debugShowCheckedModeBanner: false,
+      theme: CupertinoThemeData(brightness: Brightness.light),
       home: CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(middle: Text('Keepass One')),
         child: Center(child: Text('Hello, World!')),
