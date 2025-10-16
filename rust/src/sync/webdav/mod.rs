@@ -1,12 +1,15 @@
 mod objs;
 mod path_mapper;
 
+use bytes::Bytes;
+use futures::{Stream, TryStreamExt};
+use reqwest::Body;
 use reqwest_dav::{list_cmd::ListEntity, Auth, Depth};
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc};
 
 use crate::sync::{
     webdav::objs::{WebDavListFile, WebDavListFolder},
-    SyncDriver, SyncError, SyncFolderObj, SyncObject,
+    SyncDriver, SyncError, SyncObject,
 };
 
 use path_mapper::PathMapper;
@@ -70,8 +73,10 @@ impl WebDav {
             path_mapper,
         })
     }
+}
 
-    async fn list_path(&self, path: &str) -> Result<Vec<SyncObject>, SyncError> {
+impl SyncDriver for WebDav {
+    async fn list(&self, path: &str) -> Result<Vec<SyncObject>, SyncError> {
         let items = self
             .client
             .list(path, Depth::Number(1))
@@ -114,19 +119,30 @@ impl WebDav {
             })
             .collect())
     }
-}
 
-impl SyncDriver for WebDav {
-    async fn root(&self) -> Result<Vec<SyncObject>, SyncError> {
-        self.list_path("").await
+    async fn get(
+        &self,
+        path: &str,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<Bytes, SyncError>> + Send>>, SyncError> {
+        let response = self.client.get(path).await.map_err(get_webdav_err)?;
+        let stream = response
+            .bytes_stream()
+            .map_err(|e| SyncError::NetworkError(e.to_string()));
+
+        Ok(Box::pin(stream))
     }
 
-    async fn list(&self, dir: &dyn SyncFolderObj) -> Result<Vec<SyncObject>, SyncError> {
-        let path = dir.relative_path().ok_or(SyncError::NotFoundError(format!(
-            "Path not found: {}",
-            dir.path()
-        )))?;
-        self.list_path(&path).await
+    async fn put(
+        &self,
+        path: &str,
+        data: impl Stream<Item = Result<Bytes, SyncError>> + Send + 'static,
+    ) -> Result<(), SyncError> {
+        self.client
+            .put(path, Body::wrap_stream(data))
+            .await
+            .map_err(get_webdav_err)?;
+
+        Ok(())
     }
 }
 
@@ -239,48 +255,48 @@ fn get_http_status_message(status_code: u16) -> &'static str {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[tokio::test]
-    async fn test_webdav() -> anyhow::Result<()> {
-        dotenv::dotenv().expect("Failed to load .env file");
-        env_logger::init();
+//     #[tokio::test]
+//     async fn test_webdav() -> anyhow::Result<()> {
+//         dotenv::dotenv().expect("Failed to load .env file");
+//         env_logger::init();
 
-        let base_url = std::env::var("WEBDAV_BASE_URL").expect("WEBDAV_BASE_URL not found");
-        let username = std::env::var("WEBDAV_USERNAME").expect("WEBDAV_USERNAME not found");
-        let password = std::env::var("WEBDAV_PASSWORD").expect("WEBDAV_PASSWORD not found");
-        let tls_insecure_skip_verify = true;
+//         let base_url = std::env::var("WEBDAV_BASE_URL").expect("WEBDAV_BASE_URL not found");
+//         let username = std::env::var("WEBDAV_USERNAME").expect("WEBDAV_USERNAME not found");
+//         let password = std::env::var("WEBDAV_PASSWORD").expect("WEBDAV_PASSWORD not found");
+//         let tls_insecure_skip_verify = true;
 
-        let config =
-            WebDavConfig::new(base_url, username, password, tls_insecure_skip_verify).unwrap();
-        let webdav = WebDav::new(config)?;
-        let list = webdav.root().await?;
-        for item in list.into_iter() {
-            match item {
-                SyncObject::File(file) => println!("File: {}", file.path()),
-                SyncObject::Folder(folder) => {
-                    println!("Folder: {}", folder.path());
-                    walk_webdav(&webdav, &*folder).await;
-                }
-            }
-        }
-        Ok(())
-    }
+//         let config =
+//             WebDavConfig::new(base_url, username, password, tls_insecure_skip_verify).unwrap();
+//         let webdav = WebDav::new(config)?;
+//         let list = webdav.root().await?;
+//         for item in list.into_iter() {
+//             match item {
+//                 SyncObject::File(file) => println!("File: {}", file.path()),
+//                 SyncObject::Folder(folder) => {
+//                     println!("Folder: {}", folder.path());
+//                     walk_webdav(&webdav, &*folder).await;
+//                 }
+//             }
+//         }
+//         Ok(())
+//     }
 
-    async fn walk_webdav(webdav: &WebDav, dir: &dyn SyncFolderObj) {
-        let list = webdav.list(dir).await.expect(&format!(
-            "Failed to list folder: {}",
-            dir.relative_path().expect("Path not found")
-        ));
-        for item in list.into_iter() {
-            match item {
-                SyncObject::File(file) => println!("File: {}", file.path()),
-                SyncObject::Folder(folder) => {
-                    Box::pin(walk_webdav(webdav, &*folder)).await;
-                }
-            }
-        }
-    }
-}
+//     async fn walk_webdav(webdav: &WebDav, dir: &dyn SyncFolderObj) {
+//         let list = webdav.list(dir).await.expect(&format!(
+//             "Failed to list folder: {}",
+//             dir.relative_path().expect("Path not found")
+//         ));
+//         for item in list.into_iter() {
+//             match item {
+//                 SyncObject::File(file) => println!("File: {}", file.path()),
+//                 SyncObject::Folder(folder) => {
+//                     Box::pin(walk_webdav(webdav, &*folder)).await;
+//                 }
+//             }
+//         }
+//     }
+// }

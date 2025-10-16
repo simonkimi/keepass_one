@@ -1,8 +1,10 @@
 pub mod webdav;
 
-use std::future::Future;
+use std::{future::Future, sync::Arc};
 
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
+use futures::Stream;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SyncError {
@@ -32,6 +34,15 @@ pub enum SyncError {
 
     #[error("Unknown error: {0}")]
     UnknownError(String),
+
+    #[error("File already exists: {0}")]
+    FileExistsError(String),
+
+    #[error("Invalid path: {0}")]
+    InvalidPathError(String),
+
+    #[error("IO error: {0}")]
+    IoError(String),
 }
 
 pub trait SyncFileObj: std::fmt::Debug {
@@ -67,9 +78,20 @@ pub enum SyncObject {
 }
 
 pub trait SyncDriver {
-    fn root(&self) -> impl Future<Output = Result<Vec<SyncObject>, SyncError>>;
-    fn list(
+    fn list(&self, dir: &str) -> impl Future<Output = Result<Vec<SyncObject>, SyncError>>;
+
+    fn get(
         &self,
-        dir: &dyn SyncFolderObj,
-    ) -> impl Future<Output = Result<Vec<SyncObject>, SyncError>>;
+        path: &str,
+    ) -> impl Future<
+        Output = Result<
+            std::pin::Pin<Box<dyn Stream<Item = Result<Bytes, SyncError>> + Send>>,
+            SyncError,
+        >,
+    >;
+    fn put(
+        &self,
+        path: &str,
+        data: impl Stream<Item = Result<Bytes, SyncError>> + Send + 'static,
+    ) -> impl Future<Output = Result<(), SyncError>>;
 }
