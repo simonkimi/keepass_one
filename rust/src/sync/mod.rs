@@ -1,5 +1,7 @@
 pub mod webdav;
 
+use std::future::Future;
+
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, thiserror::Error)]
@@ -12,6 +14,21 @@ pub enum SyncError {
 
     #[error("Not found error: {0}")]
     NotFoundError(String),
+
+    #[error("Forbidden error: {0}")]
+    ForbiddenError(String),
+
+    #[error("Network error: {0}")]
+    NetworkError(String),
+
+    #[error("Timeout error: {0}")]
+    TimeoutError(String),
+
+    #[error("Server error: {0}")]
+    ServerError(String),
+
+    #[error("Client error: {0}")]
+    ClientError(String),
 
     #[error("Unknown error: {0}")]
     UnknownError(String),
@@ -50,6 +67,9 @@ pub enum SyncObject {
 }
 
 pub trait SyncDriver {
-    async fn root(&self) -> Result<Vec<SyncObject>, SyncError>;
-    async fn list(&self, dir: &dyn SyncFolderObj) -> Result<Vec<SyncObject>, SyncError>;
+    fn root(&self) -> impl Future<Output = Result<Vec<SyncObject>, SyncError>>;
+    fn list(
+        &self,
+        dir: &dyn SyncFolderObj,
+    ) -> impl Future<Output = Result<Vec<SyncObject>, SyncError>>;
 }

@@ -1,16 +1,19 @@
 use reqwest_dav::list_cmd::{ListFile, ListFolder};
+use std::sync::Arc;
 
 use crate::sync::{SyncFileObj, SyncFolderObj};
+
+use super::path_mapper::PathMapper;
 
 #[derive(Debug)]
 pub struct WebDavListFile {
     file: ListFile,
-    base_url: url::Url,
+    path_mapper: Arc<PathMapper>,
 }
 
 impl WebDavListFile {
-    pub fn new(file: ListFile, base_url: url::Url) -> Self {
-        Self { file, base_url }
+    pub fn new(file: ListFile, path_mapper: Arc<PathMapper>) -> Self {
+        Self { file, path_mapper }
     }
 }
 
@@ -28,8 +31,7 @@ impl SyncFileObj for WebDavListFile {
     }
 
     fn relative_path(&self) -> Option<String> {
-        let server_path = self.base_url.join(&self.file.href).ok()?;
-        self.base_url.make_relative(&server_path)
+        self.path_mapper.server_path_to_relative(&self.file.href)
     }
 
     fn path(&self) -> &str {
@@ -40,17 +42,12 @@ impl SyncFileObj for WebDavListFile {
 #[derive(Debug)]
 pub struct WebDavListFolder {
     folder: ListFolder,
-    base_url: url::Url,
+    path_mapper: Arc<PathMapper>,
 }
 
 impl WebDavListFolder {
-    pub fn new(folder: ListFolder, base_url: url::Url) -> Self {
-        Self { folder, base_url }
-    }
-
-    pub fn get_path(&self, base_url: &url::Url) -> Option<String> {
-        let server_path = base_url.join(&self.folder.href).ok()?;
-        base_url.make_relative(&server_path)
+    pub fn new(folder: ListFolder, path_mapper: Arc<PathMapper>) -> Self {
+        Self { folder, path_mapper }
     }
 }
 
@@ -64,8 +61,7 @@ impl SyncFolderObj for WebDavListFolder {
     }
 
     fn relative_path(&self) -> Option<String> {
-        let server_path = self.base_url.join(&self.folder.href).ok()?;
-        self.base_url.make_relative(&server_path)
+        self.path_mapper.server_path_to_relative(&self.folder.href)
     }
 
     fn path(&self) -> &str {
