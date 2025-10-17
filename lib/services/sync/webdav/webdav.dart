@@ -107,7 +107,7 @@ class WebDavSyncDriver implements SyncDriver {
 
   /// 从路径中提取文件名
   String _getNameFromPath(String path) {
-    final parts = path.split('/');
+    final parts = path.split('/').where((element) => element.isNotEmpty).toList();
     return parts.isNotEmpty ? parts.last : path;
   }
 

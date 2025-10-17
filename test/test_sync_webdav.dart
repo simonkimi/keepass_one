@@ -16,7 +16,7 @@ Future<void> main() async {
 
     final driver = WebDavSyncDriver(config);
 
-    final list = await driver.list('/share');
+    final list = await driver.list('/share/');
     for (final item in list.directories) {
       print('Directory: $item');
     }
