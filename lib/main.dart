@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:keepass_one/pages/db_index/db_index.dart';
+import 'package:keepass_one/pages/home.dart';
 import 'package:keepass_one/src/rust/frb_generated.dart';
 
 Future<void> main() async {
@@ -14,10 +16,7 @@ class MyApp extends StatelessWidget {
     return CupertinoApp(
       debugShowCheckedModeBanner: false,
       theme: CupertinoThemeData(brightness: Brightness.light),
-      home: CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(middle: Text('Keepass One')),
-        child: Center(child: Text('Hello, World!')),
-      ),
+      home: HomePage(),
     );
   }
 }
