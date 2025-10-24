@@ -41,9 +41,10 @@ class CupertinoTabletSheetRoute<T> extends PageRoute<T>
     super.settings,
     required this.builder,
     this.enableDrag = true,
-  });
+  }) : _navigatorKey = GlobalKey<NavigatorState>();
 
   final WidgetBuilder builder;
+  final GlobalKey<NavigatorState> _navigatorKey;
 
   @override
   final bool enableDrag;
@@ -52,13 +53,28 @@ class CupertinoTabletSheetRoute<T> extends PageRoute<T>
     return _CupertinoTabletSheetScope.maybeOf(context) != null;
   }
 
+  static NavigatorState? navigatorOf(BuildContext context) {
+    return _CupertinoTabletSheetScope.navigatorOf(context);
+  }
+
   @override
   Widget buildContent(BuildContext context) {
     return ClipRSuperellipse(
       borderRadius: const BorderRadius.all(Radius.circular(12)),
       child: CupertinoUserInterfaceLevel(
         data: CupertinoUserInterfaceLevelData.elevated,
-        child: _CupertinoTabletSheetScope(child: builder(context)),
+        child: _CupertinoTabletSheetScope(
+          navigatorKey: _navigatorKey,
+          child: Navigator(
+            key: _navigatorKey,
+            onGenerateRoute: (settings) {
+              return CupertinoPageRoute(
+                builder: (context) => builder(context),
+                settings: settings,
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -77,14 +93,26 @@ class CupertinoTabletSheetRoute<T> extends PageRoute<T>
 }
 
 class _CupertinoTabletSheetScope extends InheritedWidget {
-  const _CupertinoTabletSheetScope({required super.child});
+  const _CupertinoTabletSheetScope({
+    required super.child,
+    required this.navigatorKey,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
 
   static _CupertinoTabletSheetScope? maybeOf(BuildContext context) {
     return context.getInheritedWidgetOfExactType<_CupertinoTabletSheetScope>();
   }
 
+  static NavigatorState? navigatorOf(BuildContext context) {
+    final scope = context
+        .getInheritedWidgetOfExactType<_CupertinoTabletSheetScope>();
+    return scope?.navigatorKey.currentState;
+  }
+
   @override
-  bool updateShouldNotify(_CupertinoTabletSheetScope oldWidget) => false;
+  bool updateShouldNotify(_CupertinoTabletSheetScope oldWidget) =>
+      navigatorKey != oldWidget.navigatorKey;
 }
 
 mixin _CupertinoSheetRouteTransitionMixin<T> on PageRoute<T> {

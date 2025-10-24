@@ -11,7 +11,13 @@ class DriverSelect extends StatelessWidget {
         middle: Text('数据源'),
         leading: CupertinoButton(
           onPressed: () {
-            Navigator.of(context).pop();
+            // 优先使用内部 Navigator 返回，如果不存在则关闭整个 Sheet
+            final nav = CupertinoTabletSheetRoute.navigatorOf(context);
+            if (nav != null && nav.canPop()) {
+              nav.pop();
+            } else {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
           },
           padding: EdgeInsets.zero,
           child: Icon(CupertinoIcons.chevron_left),
@@ -32,11 +38,17 @@ class DriverSelect extends StatelessWidget {
                     leading: Icon(CupertinoIcons.folder),
                     title: Text('本地文件'),
                     onTap: () {
-                      Navigator.of(context).push(
-                        CupertinoTabletSheetRoute(
-                          builder: (context) => DriverSelect(),
-                        ),
+                      // 使用内部 Navigator 进行导航，而不是创建新的 Modal
+                      final nav = CupertinoTabletSheetRoute.navigatorOf(
+                        context,
                       );
+                      if (nav != null) {
+                        nav.push(
+                          CupertinoPageRoute(
+                            builder: (context) => DriverSelect(),
+                          ),
+                        );
+                      }
                     },
                   ),
                   CupertinoListTile(
