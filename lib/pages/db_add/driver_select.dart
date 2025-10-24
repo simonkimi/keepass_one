@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:keepass_one/widgets/sheet.dart';
 
 class DeiverSelect extends StatelessWidget {
   const DeiverSelect({super.key});
@@ -30,9 +30,21 @@ class DeiverSelect extends StatelessWidget {
                   CupertinoListTile(
                     leading: Icon(CupertinoIcons.folder),
                     title: Text('本地文件'),
+                    onTap: () {
+                      // showCupertinoAdaptiveSheet(
+                      //   context: context,
+                      //   builder: (context) => DeiverSelect(),
+                      //   useRootNavigator: false,
+                      // );
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => DeiverSelect(),
+                        ),
+                      );
+                    },
                   ),
                   CupertinoListTile(
-                    leading: Icon(CupertinoIcons.globe),
+                    leading: Icon(CupertinoIcons.link_circle),
                     title: Text('WebDAV'),
                   ),
                 ],

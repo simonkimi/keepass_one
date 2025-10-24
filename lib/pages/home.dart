@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/pages/db_add/driver_select.dart';
+import 'package:keepass_one/widgets/sheet.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -10,11 +11,10 @@ class HomePage extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         leading: CupertinoButton(
           onPressed: () {
-            Navigator.of(context).push(
-              CupertinoSheetRoute(
-                builder: (context) =>
-                    CupertinoPageScaffold(child: DeiverSelect()),
-              ),
+            showCupertinoAdaptiveSheet(
+              context: context,
+              builder: (context) => CupertinoPageScaffold(child: DeiverSelect()),
+              useRootNavigator: false,
             );
           },
           padding: EdgeInsets.zero,
