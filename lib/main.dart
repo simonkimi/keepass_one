@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:keepass_one/pages/db_index/db_index.dart';
 import 'package:keepass_one/pages/home.dart';
 import 'package:keepass_one/src/rust/frb_generated.dart';
 

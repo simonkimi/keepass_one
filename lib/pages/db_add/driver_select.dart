@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/widgets/sheet.dart';
 
-class DeiverSelect extends StatelessWidget {
-  const DeiverSelect({super.key});
+class DriverSelect extends StatelessWidget {
+  const DriverSelect({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +18,7 @@ class DeiverSelect extends StatelessWidget {
         ),
         padding: EdgeInsetsDirectional.zero,
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        transitionBetweenRoutes: false,
       ),
       child: Container(
         color: CupertinoColors.systemGroupedBackground,
@@ -31,14 +32,9 @@ class DeiverSelect extends StatelessWidget {
                     leading: Icon(CupertinoIcons.folder),
                     title: Text('本地文件'),
                     onTap: () {
-                      // showCupertinoAdaptiveSheet(
-                      //   context: context,
-                      //   builder: (context) => DeiverSelect(),
-                      //   useRootNavigator: false,
-                      // );
                       Navigator.of(context).push(
-                        CupertinoPageRoute(
-                          builder: (context) => DeiverSelect(),
+                        CupertinoTabletSheetRoute(
+                          builder: (context) => DriverSelect(),
                         ),
                       );
                     },

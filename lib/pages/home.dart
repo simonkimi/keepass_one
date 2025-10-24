@@ -11,10 +11,8 @@ class HomePage extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         leading: CupertinoButton(
           onPressed: () {
-            showCupertinoAdaptiveSheet(
-              context: context,
-              builder: (context) => CupertinoPageScaffold(child: DeiverSelect()),
-              useRootNavigator: false,
+            Navigator.of(context).push(
+              CupertinoTabletSheetRoute(builder: (context) => DriverSelect()),
             );
           },
           padding: EdgeInsets.zero,
