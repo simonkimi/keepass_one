@@ -33,6 +33,8 @@ const Duration _kDroppedSheetDragAnimationDuration = Duration(
   milliseconds: 300,
 );
 
+/// [CupertinoTabletSheetRoute] 是一个类似于 CupertinoSheetRoute 的实现, 它的作用是
+/// 在大屏设备上, 例如PC或者平板电脑上, 提供一个居中的Modal Sheet.
 class CupertinoTabletSheetRoute<T> extends PageRoute<T>
     with _CupertinoSheetRouteTransitionMixin<T> {
   CupertinoTabletSheetRoute({
@@ -117,6 +119,7 @@ mixin _CupertinoSheetRouteTransitionMixin<T> on PageRoute<T> {
     final bool linearTransition = popGestureInProgress;
     return CupertinoTabletSheetTransition(
       primaryRouteAnimation: animation,
+      secondaryRouteAnimation: secondaryAnimation,
       linearTransition: linearTransition,
       enableDrag: enableDrag,
       child: _CupertinoDownGestureDetector(
@@ -143,12 +146,14 @@ class CupertinoTabletSheetTransition extends StatefulWidget {
   const CupertinoTabletSheetTransition({
     super.key,
     required this.primaryRouteAnimation,
+    required this.secondaryRouteAnimation,
     required this.child,
     required this.linearTransition,
     required this.enableDrag,
   });
 
   final Animation<double> primaryRouteAnimation;
+  final Animation<double> secondaryRouteAnimation;
   final Widget child;
   final bool linearTransition;
   final bool enableDrag;
@@ -237,14 +242,73 @@ class CupertinoTabletSheetTransition extends StatefulWidget {
 
 class _CupertinoTabletSheetTransitionState
     extends State<CupertinoTabletSheetTransition> {
+  // The offset animation when this page is being covered by another sheet.
+  late Animation<Offset> _secondaryPositionAnimation;
+
+  // The scale animation when this page is being covered by another sheet.
+  late Animation<double> _secondaryScaleAnimation;
+
+  // Curve of primary page which is coming in to cover another route.
+  CurvedAnimation? _primaryPositionCurve;
+
+  // Curve of secondary page which is becoming covered by another sheet.
+  CurvedAnimation? _secondaryPositionCurve;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant CupertinoTabletSheetTransition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.primaryRouteAnimation != widget.primaryRouteAnimation ||
+        oldWidget.secondaryRouteAnimation != widget.secondaryRouteAnimation) {
+      _disposeCurve();
+      _setupAnimation();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeCurve();
+    super.dispose();
+  }
+
+  void _setupAnimation() {
+    _primaryPositionCurve = CurvedAnimation(
+      curve: Curves.fastEaseInToSlowEaseOut,
+      reverseCurve: Curves.fastEaseInToSlowEaseOut.flipped,
+      parent: widget.primaryRouteAnimation,
+    );
+    _secondaryPositionCurve = CurvedAnimation(
+      curve: Curves.linearToEaseOut,
+      reverseCurve: Curves.easeInToLinear,
+      parent: widget.secondaryRouteAnimation,
+    );
+    _secondaryPositionAnimation = _secondaryPositionCurve!.drive(_kMidUpTween);
+    _secondaryScaleAnimation = _secondaryPositionCurve!.drive(_kScaleTween);
+  }
+
+  void _disposeCurve() {
+    _primaryPositionCurve?.dispose();
+    _secondaryPositionCurve?.dispose();
+    _primaryPositionCurve = null;
+    _secondaryPositionCurve = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox.expand(
-      child: _coverSheetPrimaryTransition(
-        context,
-        widget.primaryRouteAnimation,
-        widget.linearTransition,
-        buildContent(context),
+      child: _coverSheetSecondaryTransition(
+        widget.secondaryRouteAnimation,
+        _coverSheetPrimaryTransition(
+          context,
+          widget.primaryRouteAnimation,
+          widget.linearTransition,
+          buildContent(context),
+        ),
       ),
     );
   }
@@ -256,7 +320,7 @@ class _CupertinoTabletSheetTransitionState
     Widget? child,
   ) {
     final Animatable<Offset> offsetTween =
-        CupertinoSheetRoute.hasParentSheet(context)
+        CupertinoTabletSheetRoute.hasParentSheet(context)
         ? _kBottomUpTweenWhenCoveringOtherSheet
         : _kBottomUpTween;
 
@@ -275,6 +339,22 @@ class _CupertinoTabletSheetTransitionState
     curvedAnimation.dispose();
 
     return SlideTransition(position: positionAnimation, child: child);
+  }
+
+  Widget _coverSheetSecondaryTransition(
+    Animation<double> secondaryAnimation,
+    Widget? child,
+  ) {
+    return SlideTransition(
+      position: _secondaryPositionAnimation,
+      transformHitTests: false,
+      child: ScaleTransition(
+        scale: _secondaryScaleAnimation,
+        filterQuality: FilterQuality.medium,
+        alignment: Alignment.topCenter,
+        child: child,
+      ),
+    );
   }
 
   Widget buildContent(BuildContext context) {
