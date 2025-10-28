@@ -41,9 +41,15 @@ class CupertinoTabletSheetRoute<T> extends PageRoute<T>
     super.settings,
     required this.builder,
     this.enableDrag = true,
+    this.maxWidth = 500,
+    this.maxHeight = 500,
   });
 
   final WidgetBuilder builder;
+  @override
+  final double maxWidth;
+  @override
+  final double maxHeight;
 
   @override
   final bool enableDrag;
@@ -100,6 +106,9 @@ mixin _CupertinoSheetRouteTransitionMixin<T> on PageRoute<T> {
 
   bool get enableDrag;
 
+  double get maxWidth;
+  double get maxHeight;
+
   @override
   Widget buildPage(
     BuildContext context,
@@ -122,6 +131,8 @@ mixin _CupertinoSheetRouteTransitionMixin<T> on PageRoute<T> {
       secondaryRouteAnimation: secondaryAnimation,
       linearTransition: linearTransition,
       enableDrag: enableDrag,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
       child: _CupertinoDownGestureDetector(
         enabledCallback: () => enableDrag,
         onStartPopGesture: () => _startPopGesture<T>(this),
@@ -150,6 +161,8 @@ class CupertinoTabletSheetTransition extends StatefulWidget {
     required this.child,
     required this.linearTransition,
     required this.enableDrag,
+    required this.maxWidth,
+    required this.maxHeight,
   });
 
   final Animation<double> primaryRouteAnimation;
@@ -157,6 +170,8 @@ class CupertinoTabletSheetTransition extends StatefulWidget {
   final Widget child;
   final bool linearTransition;
   final bool enableDrag;
+  final double maxWidth;
+  final double maxHeight;
 
   static Widget delegateTransition(
     BuildContext context,
@@ -242,16 +257,9 @@ class CupertinoTabletSheetTransition extends StatefulWidget {
 
 class _CupertinoTabletSheetTransitionState
     extends State<CupertinoTabletSheetTransition> {
-  // The offset animation when this page is being covered by another sheet.
   late Animation<Offset> _secondaryPositionAnimation;
-
-  // The scale animation when this page is being covered by another sheet.
   late Animation<double> _secondaryScaleAnimation;
-
-  // Curve of primary page which is coming in to cover another route.
   CurvedAnimation? _primaryPositionCurve;
-
-  // Curve of secondary page which is becoming covered by another sheet.
   CurvedAnimation? _secondaryPositionCurve;
 
   @override
@@ -360,7 +368,10 @@ class _CupertinoTabletSheetTransitionState
   Widget buildContent(BuildContext context) {
     return Center(
       child: Container(
-        constraints: BoxConstraints(maxWidth: 500, maxHeight: 500),
+        constraints: BoxConstraints(
+          maxWidth: widget.maxWidth,
+          maxHeight: widget.maxHeight,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -416,7 +427,6 @@ class _CupertinoDownGestureDetectorState<T>
   void dispose() {
     _recognizer.dispose();
 
-    // If this is disposed during a drag, call navigator.didStopUserGesture.
     if (_downGestureController != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_downGestureController?.navigator.mounted ?? false) {
@@ -438,7 +448,6 @@ class _CupertinoDownGestureDetectorState<T>
     assert(mounted);
     assert(_downGestureController != null);
     _downGestureController!.dragUpdate(
-      // Divide by size of the sheet.
       details.primaryDelta! /
           (context.size!.height - (context.size!.height * _kTopGapRatio)),
     );
@@ -455,8 +464,6 @@ class _CupertinoDownGestureDetectorState<T>
 
   void _handleDragCancel() {
     assert(mounted);
-    // This can be called even if start is not called, paired with the "down" event
-    // that we don't consider here.
     _downGestureController?.dragEnd(0.0);
     _downGestureController = null;
   }
@@ -478,7 +485,6 @@ class _CupertinoDownGestureDetectorState<T>
 }
 
 class _CupertinoDownGestureController<T> {
-  /// Creates a controller for an iOS-style back gesture.
   _CupertinoDownGestureController({
     required this.navigator,
     required this.controller,
@@ -493,40 +499,20 @@ class _CupertinoDownGestureController<T> {
   final ValueGetter<bool> getIsActive;
   final ValueGetter<bool> getIsCurrent;
 
-  /// The drag gesture has changed by [delta]. The total range of the drag
-  /// should be 0.0 to 1.0.
   void dragUpdate(double delta) {
     controller.value -= delta;
   }
 
-  /// The drag gesture has ended with a vertical motion of [velocity] as a
-  /// fraction of screen height per second.
   void dragEnd(double velocity) {
-    // Fling in the appropriate direction.
-    //
-    // This curve has been determined through rigorously eyeballing native iOS
-    // animations on a simulator running iOS 18.0.
     const Curve animationCurve = Curves.easeOut;
     final bool isCurrent = getIsCurrent();
     final bool animateForward;
 
     if (!isCurrent) {
-      // If the page has already been navigated away from, then the animation
-      // direction depends on whether or not it's still in the navigation stack,
-      // regardless of velocity or drag position. For example, if a route is
-      // being slowly dragged back by just a few pixels, but then a programmatic
-      // pop occurs, the route should still be animated off the screen.
-      // See https://github.com/flutter/flutter/issues/141268.
       animateForward = getIsActive();
     } else if (velocity.abs() >= _kMinFlingVelocity) {
-      // If the user releases the page before mid screen with sufficient velocity,
-      // or after mid screen, we should animate the page out. Otherwise, the page
-      // should be animated back in.
       animateForward = velocity <= 0;
     } else {
-      // If the drag is dropped with low velocity, the sheet will pop if the
-      // the drag goes a little past the halfway point on the screen. This is
-      // eyeballed on a simulator running iOS 18.0.
       animateForward = controller.value > 0.52;
     }
 
@@ -538,7 +524,6 @@ class _CupertinoDownGestureController<T> {
       );
     } else {
       if (isCurrent) {
-        // This route is destined to pop at this point. Reuse navigator's pop.
         final NavigatorState rootNavigator = Navigator.of(
           navigator.context,
           rootNavigator: true,
@@ -556,10 +541,6 @@ class _CupertinoDownGestureController<T> {
     }
 
     if (controller.isAnimating) {
-      // Keep the userGestureInProgress in true state so we don't change the
-      // curve of the page transition mid-flight since CupertinoPageTransition
-      // depends on userGestureInProgress.
-      // late AnimationStatusListener animationStatusCallback;
       void animationStatusCallback(AnimationStatus status) {
         navigator.didStopUserGesture();
         controller.removeStatusListener(animationStatusCallback);
@@ -569,5 +550,123 @@ class _CupertinoDownGestureController<T> {
     } else {
       navigator.didStopUserGesture();
     }
+  }
+}
+
+/// 无动画的 PageRoute，用于嵌套 Navigator 的初始路由
+/// 这样在 pop 初始路由时不会有动画冲突
+class _NoAnimationPageRoute<T> extends PageRoute<T> {
+  _NoAnimationPageRoute({required this.builder, super.settings});
+
+  final WidgetBuilder builder;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return builder(context);
+  }
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return child;
+  }
+}
+
+Future<T?> showCupertinoTabletSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool useNestedNavigation = false,
+  bool enableDrag = true,
+  double maxWidth = 500,
+  double maxHeight = 500,
+}) {
+  final GlobalKey<NavigatorState> nestedNavigatorKey =
+      GlobalKey<NavigatorState>();
+  final WidgetBuilder widgetBuilder;
+  if (!useNestedNavigation) {
+    widgetBuilder = builder;
+  } else {
+    widgetBuilder = (BuildContext context) {
+      return NavigatorPopHandler(
+        onPopWithResult: (T? result) {
+          nestedNavigatorKey.currentState!.maybePop();
+        },
+        child: Navigator(
+          key: nestedNavigatorKey,
+          onGenerateInitialRoutes: (navigator, initialRoute) {
+            return <Route<void>>[
+              CupertinoPageRoute<void>(
+                builder: (context) {
+                  return PopScope(
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, result) {
+                      Navigator.of(context, rootNavigator: true).pop(result);
+                    },
+                    child: builder(context),
+                  );
+                },
+              ),
+            ];
+          },
+        ),
+      );
+    };
+  }
+
+  return Navigator.of(context, rootNavigator: true).push<T>(
+    CupertinoTabletSheetRoute<T>(
+      builder: widgetBuilder,
+      enableDrag: enableDrag,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+    ),
+  );
+}
+
+Future<T?> showCupertinoModal<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool useNestedNavigation = false,
+  bool enableDrag = true,
+  double maxWidth = 500,
+  double maxHeight = 500,
+}) {
+  final isLargeScreen = MediaQuery.of(context).size.shortestSide >= 600;
+  if (isLargeScreen) {
+    return showCupertinoTabletSheet(
+      context: context,
+      builder: builder,
+      useNestedNavigation: useNestedNavigation,
+      enableDrag: enableDrag,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+    );
+  } else {
+    return showCupertinoSheet(
+      context: context,
+      builder: builder,
+      enableDrag: enableDrag,
+      useNestedNavigation: useNestedNavigation,
+    );
   }
 }

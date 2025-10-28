@@ -11,8 +11,11 @@ class HomePage extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         leading: CupertinoButton(
           onPressed: () {
-            Navigator.of(context).push(
-              CupertinoTabletSheetRoute(builder: (context) => DriverSelect()),
+            showCupertinoModal(
+              context: context,
+              builder: (context) => DriverSelect(),
+              useNestedNavigation: true,
+              enableDrag: false,
             );
           },
           padding: EdgeInsets.zero,

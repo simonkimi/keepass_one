@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:keepass_one/widgets/sheet.dart';
+import 'package:keepass_one/pages/db_add/webdav_settings.dart';
 
 class DriverSelect extends StatelessWidget {
   const DriverSelect({super.key});
@@ -11,13 +11,12 @@ class DriverSelect extends StatelessWidget {
         middle: Text('数据源'),
         leading: CupertinoButton(
           onPressed: () {
-            Navigator.of(context).pop();
+            Navigator.of(context, rootNavigator: true).pop();
           },
           padding: EdgeInsets.zero,
           child: Icon(CupertinoIcons.chevron_left),
         ),
         padding: EdgeInsetsDirectional.zero,
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         transitionBetweenRoutes: false,
       ),
       child: Container(
@@ -33,7 +32,7 @@ class DriverSelect extends StatelessWidget {
                     title: Text('本地文件'),
                     onTap: () {
                       Navigator.of(context).push(
-                        CupertinoTabletSheetRoute(
+                        CupertinoPageRoute(
                           builder: (context) => DriverSelect(),
                         ),
                       );
@@ -42,6 +41,13 @@ class DriverSelect extends StatelessWidget {
                   CupertinoListTile(
                     leading: Icon(CupertinoIcons.link_circle),
                     title: Text('WebDAV'),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => WebdavSettingsPage(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
