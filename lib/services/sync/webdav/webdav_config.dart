@@ -7,8 +7,6 @@ part 'webdav_config.g.dart';
 /// WebDAV配置
 @freezed
 sealed class WebDavConfig with _$WebDavConfig implements BaseDriverConfig {
-  static const String kDriverType = 'webdav';
-
   const WebDavConfig._();
 
   /// 创建WebDAV配置
