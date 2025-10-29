@@ -11,8 +11,6 @@ import 'package:dio/dio.dart' show DioException;
 
 /// WebDAV同步驱动实现
 class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
-  static const String kDriverName = 'WebDAV';
-
   /// WebDAV配置
   final WebDavConfig config;
 
@@ -22,13 +20,10 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   /// 构造函数
   WebDavSyncDriver(this.config)
     : client = newClient(
-        config.baseUrl,
+        config.url,
         user: config.username,
         password: config.password,
       );
-
-  @override
-  String get driverName => WebDavSyncDriver.kDriverName;
 
   @override
   Future<List<FileSystemEntity>> list(String path) async {
@@ -58,11 +53,11 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   }
 
   @override
-  Future<Uint8List> get(
-    String path, {
+  Future<Uint8List> get({
+    String? path,
     void Function(int count, int total)? onProgress,
   }) async {
-    final bytes = await client.read(path, onProgress: onProgress);
+    final bytes = await client.read(path ?? '', onProgress: onProgress);
     return Uint8List.fromList(bytes);
   }
 

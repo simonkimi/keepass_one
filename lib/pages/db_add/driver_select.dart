@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/pages/db_add/webdav_settings.dart';
+import 'package:keepass_one/services/sync/driver_config.dart';
+import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
 
 class DriverSelect extends StatelessWidget {
   const DriverSelect({super.key});
@@ -30,23 +34,21 @@ class DriverSelect extends StatelessWidget {
                   CupertinoListTile(
                     leading: Icon(CupertinoIcons.folder),
                     title: Text('本地文件'),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        CupertinoPageRoute(
-                          builder: (context) => DriverSelect(),
-                        ),
-                      );
-                    },
+                    onTap: () {},
                   ),
                   CupertinoListTile(
                     leading: Icon(CupertinoIcons.link_circle),
                     title: Text('WebDAV'),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        CupertinoPageRoute(
-                          builder: (context) => WebdavSettingsPage(),
-                        ),
-                      );
+                    onTap: () async {
+                      final config = await Navigator.of(context)
+                          .push<WebDavConfig>(
+                            CupertinoPageRoute(
+                              builder: (context) => WebdavSettingsPage(),
+                            ),
+                          );
+                      if (config != null && context.mounted) {
+                        await _onSelectDriver(context, config);
+                      }
                     },
                   ),
                 ],
@@ -56,5 +58,13 @@ class DriverSelect extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _onSelectDriver(
+    BuildContext context,
+    BaseDriverConfig config,
+  ) async {
+    print(jsonEncode(config.toJson()));
+    Navigator.of(context).pop(config);
   }
 }

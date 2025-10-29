@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/services/file_system/file_system_models.dart';
 import 'package:keepass_one/services/file_system/file_system_provider.dart';
+import 'package:keepass_one/utils/platform.dart';
 import 'package:keepass_one/widgets/file_picker/file_picker_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -31,6 +32,8 @@ class FilePicker extends StatelessWidget {
                           .read<FilePickerProvider>()
                           .fileSystemProvider
                           .getRootPath(),
+                      onSelect: (path) => _onSelectFile(context, path),
+                      canGoBack: false,
                     ),
                   ),
                 ];
@@ -67,13 +70,55 @@ class FilePicker extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _onSelectFile(BuildContext context, String path) async {
+    if (!path.endsWith('.kdbx')) {
+      final result = await showCupertinoDialog<bool>(
+        barrierDismissible: true,
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text('提示'),
+          content: Text('这看起来并不是一个kdbx文件, 是否任然要选择此文件?'),
+          actions: platformActionsBaseOnMobile([
+            CupertinoDialogAction(
+              child: Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            CupertinoDialogAction(
+              child: Text('确定', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ]),
+        ),
+      );
+      if (result != true) {
+        return;
+      }
+    }
+
+    if (context.mounted) {
+      Navigator.of(context).pop(path);
+    }
+  }
 }
 
 class FilePickerPage extends StatefulWidget {
-  const FilePickerPage({super.key, required this.path, this.name});
+  const FilePickerPage({
+    super.key,
+    required this.path,
+    this.name,
+    this.onSelect,
+    this.canGoBack = false,
+  });
 
   final String path;
   final String? name;
+  final ValueChanged<String>? onSelect;
+  final bool canGoBack;
 
   @override
   State<FilePickerPage> createState() => _FilePickerPageState();
@@ -81,41 +126,51 @@ class FilePickerPage extends StatefulWidget {
 
 class _FilePickerPageState extends State<FilePickerPage>
     with AutomaticKeepAliveClientMixin {
+  List<FileSystemEntity>? _files;
+
+  @override
+  void initState() {
+    super.initState();
+    context
+        .read<FilePickerProvider>()
+        .fileSystemProvider
+        .listDirectory(widget.path)
+        .then((value) {
+          setState(() {
+            _files = value;
+          });
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Container(
       color: CupertinoColors.systemBackground,
-      child: FutureBuilder(
-        future: context
-            .read<FilePickerProvider>()
-            .fileSystemProvider
-            .listDirectory(widget.path),
-        builder:
-            (
-              BuildContext context,
-              AsyncSnapshot<List<FileSystemEntity>> snapshot,
-            ) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.none:
-                  return _buildLoading();
-                case ConnectionState.waiting:
-                  return _buildLoading();
-                case ConnectionState.active:
-                  return _buildLoading();
-                case ConnectionState.done:
-                  return _buildFileList(context, snapshot.data ?? []);
-              }
-            },
-      ),
+      child: _files == null
+          ? _buildLoading()
+          : _buildFileList(context, _files!),
     );
   }
 
   Widget _buildFileList(BuildContext context, List<FileSystemEntity> files) {
     return ListView.builder(
-      itemCount: files.length,
+      itemCount: widget.canGoBack ? files.length + 1 : files.length,
       itemBuilder: (context, index) {
-        final file = files[index];
+        if (widget.canGoBack && index == 0) {
+          return CupertinoListTile(
+            leading: Icon(CupertinoIcons.chevron_left),
+            title: Text("返回上一级"),
+            onTap: () {
+              context.read<FilePickerProvider>().popPath();
+              Navigator.of(context).pop();
+            },
+          );
+        }
+
+        final fileIndex = widget.canGoBack ? index - 1 : index;
+        final file = files[fileIndex];
+
         return CupertinoListTile(
           leading: Icon(
             file.isDirectory ? CupertinoIcons.folder : CupertinoIcons.doc,
@@ -132,10 +187,16 @@ class _FilePickerPageState extends State<FilePickerPage>
                 CupertinoPageRoute(
                   builder: (_) => ChangeNotifierProvider.value(
                     value: provider,
-                    child: FilePickerPage(path: file.path),
+                    child: FilePickerPage(
+                      path: file.path,
+                      onSelect: widget.onSelect,
+                      canGoBack: true,
+                    ),
                   ),
                 ),
               );
+            } else {
+              widget.onSelect?.call(file.path);
             }
           },
         );

@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WebDavConfig {
 
-/// 服务器基础URL
- String get baseUrl;/// 用户名
+ String get url;/// 用户名
  String get username;/// 密码
  String get password;/// 是否跳过TLS证书验证
  bool get tlsInsecureSkipVerify;
@@ -32,16 +31,16 @@ $WebDavConfigCopyWith<WebDavConfig> get copyWith => _$WebDavConfigCopyWithImpl<W
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfig&&(identical(other.url, url) || other.url == url)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,baseUrl,username,password,tlsInsecureSkipVerify);
+int get hashCode => Object.hash(runtimeType,url,username,password,tlsInsecureSkipVerify);
 
 @override
 String toString() {
-  return 'WebDavConfig(baseUrl: $baseUrl, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify)';
+  return 'WebDavConfig(url: $url, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify)';
 }
 
 
@@ -52,7 +51,7 @@ abstract mixin class $WebDavConfigCopyWith<$Res>  {
   factory $WebDavConfigCopyWith(WebDavConfig value, $Res Function(WebDavConfig) _then) = _$WebDavConfigCopyWithImpl;
 @useResult
 $Res call({
- String baseUrl, String username, String password, bool tlsInsecureSkipVerify
+ String url, String username, String password, bool tlsInsecureSkipVerify
 });
 
 
@@ -69,9 +68,9 @@ class _$WebDavConfigCopyWithImpl<$Res>
 
 /// Create a copy of WebDavConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? baseUrl = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,}) {
   return _then(_self.copyWith(
-baseUrl: null == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
+url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,tlsInsecureSkipVerify: null == tlsInsecureSkipVerify ? _self.tlsInsecureSkipVerify : tlsInsecureSkipVerify // ignore: cast_nullable_to_non_nullable
@@ -157,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String baseUrl,  String username,  String password,  bool tlsInsecureSkipVerify)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  String username,  String password,  bool tlsInsecureSkipVerify)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WebDavConfig() when $default != null:
-return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSkipVerify);case _:
+return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVerify);case _:
   return orElse();
 
 }
@@ -178,10 +177,10 @@ return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSki
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String baseUrl,  String username,  String password,  bool tlsInsecureSkipVerify)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  String username,  String password,  bool tlsInsecureSkipVerify)  $default,) {final _that = this;
 switch (_that) {
 case _WebDavConfig():
-return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSkipVerify);}
+return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVerify);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -195,10 +194,10 @@ return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSki
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String baseUrl,  String username,  String password,  bool tlsInsecureSkipVerify)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  String username,  String password,  bool tlsInsecureSkipVerify)?  $default,) {final _that = this;
 switch (_that) {
 case _WebDavConfig() when $default != null:
-return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSkipVerify);case _:
+return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVerify);case _:
   return null;
 
 }
@@ -210,11 +209,10 @@ return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSki
 @JsonSerializable()
 
 class _WebDavConfig extends WebDavConfig {
-  const _WebDavConfig({required this.baseUrl, required this.username, required this.password, required this.tlsInsecureSkipVerify}): super._();
+  const _WebDavConfig({required this.url, required this.username, required this.password, required this.tlsInsecureSkipVerify}): super._();
   factory _WebDavConfig.fromJson(Map<String, dynamic> json) => _$WebDavConfigFromJson(json);
 
-/// 服务器基础URL
-@override final  String baseUrl;
+@override final  String url;
 /// 用户名
 @override final  String username;
 /// 密码
@@ -235,16 +233,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebDavConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebDavConfig&&(identical(other.url, url) || other.url == url)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,baseUrl,username,password,tlsInsecureSkipVerify);
+int get hashCode => Object.hash(runtimeType,url,username,password,tlsInsecureSkipVerify);
 
 @override
 String toString() {
-  return 'WebDavConfig(baseUrl: $baseUrl, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify)';
+  return 'WebDavConfig(url: $url, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify)';
 }
 
 
@@ -255,7 +253,7 @@ abstract mixin class _$WebDavConfigCopyWith<$Res> implements $WebDavConfigCopyWi
   factory _$WebDavConfigCopyWith(_WebDavConfig value, $Res Function(_WebDavConfig) _then) = __$WebDavConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String baseUrl, String username, String password, bool tlsInsecureSkipVerify
+ String url, String username, String password, bool tlsInsecureSkipVerify
 });
 
 
@@ -272,9 +270,9 @@ class __$WebDavConfigCopyWithImpl<$Res>
 
 /// Create a copy of WebDavConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? baseUrl = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,}) {
   return _then(_WebDavConfig(
-baseUrl: null == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
+url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,tlsInsecureSkipVerify: null == tlsInsecureSkipVerify ? _self.tlsInsecureSkipVerify : tlsInsecureSkipVerify // ignore: cast_nullable_to_non_nullable

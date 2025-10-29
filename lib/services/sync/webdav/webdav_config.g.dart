@@ -8,7 +8,7 @@ part of 'webdav_config.dart';
 
 _WebDavConfig _$WebDavConfigFromJson(Map<String, dynamic> json) =>
     _WebDavConfig(
-      baseUrl: json['baseUrl'] as String,
+      url: json['url'] as String,
       username: json['username'] as String,
       password: json['password'] as String,
       tlsInsecureSkipVerify: json['tlsInsecureSkipVerify'] as bool,
@@ -16,7 +16,7 @@ _WebDavConfig _$WebDavConfigFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$WebDavConfigToJson(_WebDavConfig instance) =>
     <String, dynamic>{
-      'baseUrl': instance.baseUrl,
+      'url': instance.url,
       'username': instance.username,
       'password': instance.password,
       'tlsInsecureSkipVerify': instance.tlsInsecureSkipVerify,

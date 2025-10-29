@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:keepass_one/services/sync/driver_config.dart';
 import 'package:keepass_one/services/sync/exceptions.dart';
 import 'package:keepass_one/services/sync/sync_driver.dart';
 import 'package:keepass_one/services/sync/webdav/webdav.dart';
@@ -19,19 +20,16 @@ class SyncDriverFactory {
   /// 抛出 ArgumentError 如果驱动类型未知
   /// 抛出 FormatException 如果JSON格式错误
   /// 抛出 SyncException 如果配置参数不完整或错误
-  static Future<SyncDriver> create(String driverType, String configJson) async {
+  static Future<SyncDriver> create(
+    DriverType driverType,
+    String configJson,
+  ) async {
     try {
-      SyncDriver driver;
-      switch (driverType) {
-        case WebDavSyncDriver.kDriverName:
-          final config = WebDavConfig.fromJson(jsonDecode(configJson));
-          driver = WebDavSyncDriver(config);
-          break;
-
-        default:
-          throw ArgumentError('Unknown driver type: $driverType');
-      }
-      return driver;
+      final config = jsonDecode(configJson);
+      return switch (driverType) {
+        DriverType.webdav => WebDavSyncDriver(WebDavConfig.fromJson(config)),
+        _ => throw ArgumentError('Unknown driver type: $driverType'),
+      };
     } on FormatException catch (e) {
       throw SyncIOException(
         'Invalid JSON configuration',

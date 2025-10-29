@@ -19,6 +19,7 @@ dependencies:
   flutter_dotenv: ^6.0.0
 
   webdav_client: ^1.2.2
+  dartssh2: ^2.13.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
   dio: ^5.9.0
@@ -26,6 +27,7 @@ dependencies:
   drift: ^2.29.0
   drift_flutter: ^0.2.7
   path_provider: ^2.1.5
+  collection: ^1.19.1
 
   drift_dev: ^2.29.0
   build_runner: ^2.9.0
