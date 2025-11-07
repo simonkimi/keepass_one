@@ -185,13 +185,10 @@ class _FilePickerPageState extends State<FilePickerPage>
               provider.pushPath(file.name);
               await Navigator.of(context).push(
                 CupertinoPageRoute(
-                  builder: (_) => ChangeNotifierProvider.value(
-                    value: provider,
-                    child: FilePickerPage(
-                      path: file.path,
-                      onSelect: widget.onSelect,
-                      canGoBack: true,
-                    ),
+                  builder: (_) => FilePickerPage(
+                    path: file.path,
+                    onSelect: widget.onSelect,
+                    canGoBack: true,
                   ),
                 ),
               );

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/pages/db_add/webdav_settings.dart';
@@ -65,12 +63,11 @@ class DriverSelect extends StatelessWidget {
     final FilePickerResult? file = await FilePicker.platform.pickFiles(
       type: FileType.any,
     );
-    if (file == null || !context.mounted || file.files.isEmpty) return;
 
+    if (file == null || !context.mounted || file.files.isEmpty) return;
     final config = LocalConfig(path: file.files.first.path!);
     if (context.mounted) {
-      print(jsonEncode(config.toJson()));
-      Navigator.of(context).pop(config);
+      Navigator.of(context, rootNavigator: true).pop(config);
     }
   }
 
@@ -78,7 +75,6 @@ class DriverSelect extends StatelessWidget {
     BuildContext context,
     BaseDriverConfig config,
   ) async {
-    print(jsonEncode(config.toJson()));
-    Navigator.of(context).pop(config);
+    Navigator.of(context, rootNavigator: true).pop(config);
   }
 }
