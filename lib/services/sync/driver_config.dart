@@ -14,4 +14,10 @@ enum DriverType {
 
 abstract interface class BaseDriverConfig {
   Map<String, dynamic> toJson();
+
+  String get name;
+
+  String get description;
+
+  DriverType get type;
 }

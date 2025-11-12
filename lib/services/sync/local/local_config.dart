@@ -12,4 +12,16 @@ sealed class LocalConfig with _$LocalConfig implements BaseDriverConfig {
 
   factory LocalConfig.fromJson(Map<String, dynamic> json) =>
       _$LocalConfigFromJson(json);
+
+  @override
+  DriverType get type => DriverType.local;
+
+  @override
+  String get name {
+    final normalizedPath = path.replaceAll('\\', '/');
+    return normalizedPath.split('/').last;
+  }
+
+  @override
+  String get description => path;
 }

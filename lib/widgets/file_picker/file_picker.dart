@@ -127,19 +127,12 @@ class FilePickerPage extends StatefulWidget {
 class _FilePickerPageState extends State<FilePickerPage>
     with AutomaticKeepAliveClientMixin {
   List<FileSystemEntity>? _files;
+  Exception? _error;
 
   @override
   void initState() {
     super.initState();
-    context
-        .read<FilePickerProvider>()
-        .fileSystemProvider
-        .listDirectory(widget.path)
-        .then((value) {
-          setState(() {
-            _files = value;
-          });
-        });
+    _loadDirectory();
   }
 
   @override
@@ -147,10 +140,80 @@ class _FilePickerPageState extends State<FilePickerPage>
     super.build(context);
     return Container(
       color: CupertinoColors.systemBackground,
-      child: _files == null
+      child: _error != null
+          ? _buildError()
+          : _files == null
           ? _buildLoading()
           : _buildFileList(context, _files!),
     );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.exclamationmark_triangle,
+              size: 48,
+              color: CupertinoColors.systemRed,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _error?.toString() ?? '发生错误',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: CupertinoColors.label,
+              ),
+            ),
+            const SizedBox(height: 24),
+            CupertinoButton(
+              onPressed: _handleRefresh,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(CupertinoIcons.arrow_clockwise),
+                  const SizedBox(width: 8),
+                  Text('刷新'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadDirectory() async {
+    try {
+      final files = await context
+          .read<FilePickerProvider>()
+          .fileSystemProvider
+          .listDirectory(widget.path);
+      if (mounted) {
+        setState(() {
+          _files = files;
+          _error = null;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error is Exception ? error : Exception(error.toString());
+        });
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _files = null;
+      _error = null;
+    });
+    await _loadDirectory();
   }
 
   Widget _buildFileList(BuildContext context, List<FileSystemEntity> files) {

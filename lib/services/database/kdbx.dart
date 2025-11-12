@@ -3,7 +3,10 @@ import 'package:drift/drift.dart';
 class KdbxItems extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+  TextColumn get description => text()();
+  TextColumn get type => text()();
   TextColumn get config => text()();
+
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get lastAccessedAt => dateTime()();

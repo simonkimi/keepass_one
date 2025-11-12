@@ -9,6 +9,15 @@ part 'webdav_config.g.dart';
 sealed class WebDavConfig with _$WebDavConfig implements BaseDriverConfig {
   const WebDavConfig._();
 
+  @override
+  DriverType get type => DriverType.webdav;
+
+  @override
+  String get name => url.split('/').last;
+
+  @override
+  String get description => url;
+
   /// 创建WebDAV配置
   const factory WebDavConfig({
     required String url,

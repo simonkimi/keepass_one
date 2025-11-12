@@ -1,12 +1,16 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:keepass_one/pages/db_add/webdav_settings.dart';
+import 'package:keepass_one/di.dart';
+import 'package:keepass_one/pages/kdbx_add/webdav_settings.dart';
+import 'package:keepass_one/services/database/database.dart';
 import 'package:keepass_one/services/sync/driver_config.dart';
 import 'package:keepass_one/services/sync/local/local_config.dart';
 import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
 
-class DriverSelect extends StatelessWidget {
-  const DriverSelect({super.key});
+class KdbxSourceSelectorPage extends StatelessWidget {
+  const KdbxSourceSelectorPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -65,16 +69,27 @@ class DriverSelect extends StatelessWidget {
     );
 
     if (file == null || !context.mounted || file.files.isEmpty) return;
-    final config = LocalConfig(path: file.files.first.path!);
-    if (context.mounted) {
-      Navigator.of(context, rootNavigator: true).pop(config);
-    }
+    await _onSelectDriver(context, LocalConfig(path: file.files.first.path!));
   }
 
   Future<void> _onSelectDriver(
     BuildContext context,
     BaseDriverConfig config,
   ) async {
+    final configJson = jsonEncode(config.toJson());
+    getIt.get<AppDatabase>().kdbxItemDao.createKdbxItem(
+      KdbxItemsCompanion.insert(
+        name: config.name,
+        type: config.type.key,
+        description: config.description,
+        config: configJson,
+        createdAt: DateTime.now(),
+        lastAccessedAt: DateTime.fromMillisecondsSinceEpoch(0),
+        lastModifiedAt: DateTime.now(),
+        lastSyncedAt: DateTime.fromMillisecondsSinceEpoch(0),
+        lastHashValue: '',
+      ),
+    );
     Navigator.of(context, rootNavigator: true).pop(config);
   }
 }
