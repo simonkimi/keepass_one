@@ -113,16 +113,16 @@ class WebdavSettingsPage extends HookWidget {
   ) {
     return CupertinoNavigationBar(
       middle: Text('WebDAV设置'),
-      padding: EdgeInsetsDirectional.zero,
+      padding: .zero,
       leading: CupertinoButton(
         onPressed: () {
           Navigator.of(context, rootNavigator: true).pop();
         },
-        padding: EdgeInsets.zero,
+        padding: .zero,
         child: Icon(CupertinoIcons.chevron_left),
       ),
       trailing: CupertinoButton(
-        padding: EdgeInsets.only(right: 16),
+        padding: .only(right: 16),
         onPressed: () {
           // 在应用前验证表单
           if (formKey.currentState?.validate() ?? false) {

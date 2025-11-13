@@ -21,7 +21,7 @@ class KdbxSourceSelectorPage extends StatelessWidget {
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
           },
-          padding: EdgeInsets.zero,
+          padding: .zero,
           child: Icon(CupertinoIcons.chevron_left),
         ),
         padding: EdgeInsetsDirectional.zero,
@@ -31,7 +31,7 @@ class KdbxSourceSelectorPage extends StatelessWidget {
         color: CupertinoColors.systemGroupedBackground,
         child: SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.max,
+            mainAxisSize: .max,
             children: [
               CupertinoListSection.insetGrouped(
                 children: [
@@ -65,7 +65,7 @@ class KdbxSourceSelectorPage extends StatelessWidget {
 
   Future<void> _onSelectLocal(BuildContext context) async {
     final FilePickerResult? file = await FilePicker.platform.pickFiles(
-      type: FileType.any,
+      type: .any,
     );
 
     if (file == null || !context.mounted || file.files.isEmpty) return;
