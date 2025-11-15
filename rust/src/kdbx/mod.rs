@@ -1,7 +1,7 @@
 mod config;
 mod db;
 pub mod error;
-mod keys;
+pub mod keys;
 mod compression;
 mod xml;
 mod otp;

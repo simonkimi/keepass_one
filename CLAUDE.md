@@ -38,8 +38,7 @@ flutter test
 - **Flutter Rust Bridge**: 实现Dart和Rust间的无缝通信
 
 ### 2. 状态管理
-- **Riverpod**: 主要状态管理解决方案
-- **Provider**: 用于本地组件状态(如FilePickerProvider)
+- **Provider**: 状态管理
 - **GetIt**: 服务的依赖注入
 
 ### 3. 数据库层
@@ -54,7 +53,6 @@ flutter test
 ## 核心依赖
 
 ### Flutter主要依赖
-- `flutter_riverpod`: 状态管理
 - `drift`: 数据库ORM
 - `flutter_rust_bridge`: Rust集成
 - `webdav_client`: WebDAV文件同步
@@ -91,8 +89,8 @@ lib/
 
 ## 数据流架构
 
-1. **初始化**: Rust库 → GetIt服务 → Riverpod提供者
-2. **数据库操作**: UI → Riverpod → Drift ORM → SQLite
+1. **初始化**: Rust库 → GetIt服务
+2. **数据库操作**: UI → Drift ORM → SQLite
 3. **文件操作**: UI → FileSystemProvider → SyncDriver → 外部服务
 4. **加密操作**: UI → Dart → Flutter Rust Bridge → Rust函数
 

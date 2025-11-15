@@ -3,7 +3,7 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
-class $KdbxItemsTable extends KdbxItems
+class $KdbxItemsTable extends KdbxFile
     with TableInfo<$KdbxItemsTable, KdbxItem> {
   @override
   final GeneratedDatabase attachedDatabase;

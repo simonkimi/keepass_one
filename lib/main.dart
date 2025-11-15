@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keepass_one/di.dart';
 import 'package:keepass_one/pages/kdbx_selector/kdbx_selector.dart';
 import 'package:keepass_one/services/database/database.dart';
@@ -20,7 +19,7 @@ Future<void> initializeApp() async {
 
 Future<void> main() async {
   await initializeApp();
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

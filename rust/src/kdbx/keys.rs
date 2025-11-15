@@ -55,8 +55,7 @@ impl KdbxKey {
 
         if let Some(ref key_file_buf) = self.key_file {
             key_parts.push(
-                try_parse_keyfile(key_file_buf.expose_secret())
-                    .ok_or_else(|| KdbxKeyError::FailedToParseKeyFile)?,
+                parse_keyfile(key_file_buf.expose_secret())
             );
         }
 
@@ -72,13 +71,13 @@ impl KdbxKey {
     }
 }
 
-fn try_parse_keyfile(key_buf: &[u8]) -> Option<Vec<u8>> {
+pub fn parse_keyfile(key_buf: &[u8]) -> Vec<u8> {
     if let Some(v) = try_parse_xml_keyfile(key_buf) {
-        Some(v)
+        v
     } else if key_buf.len() == 32 {
-        Some(key_buf.to_vec())
+        key_buf.to_vec()
     } else {
-        Some(calculate_sha256(key_buf).to_vec())
+        calculate_sha256(key_buf).to_vec()
     }
 }
 

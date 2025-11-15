@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:keepass_one/services/database/database.dart';
-import 'package:keepass_one/services/database/kdbx.dart';
+import 'package:keepass_one/services/database/kdbx_file.dart';
 
 part 'kdbx_dao.g.dart';
 
-@DriftAccessor(tables: [KdbxItems])
+@DriftAccessor(tables: [KdbxFile])
 class KdbxItemDao extends DatabaseAccessor<AppDatabase>
     with _$KdbxItemDaoMixin {
   KdbxItemDao(super.db);
