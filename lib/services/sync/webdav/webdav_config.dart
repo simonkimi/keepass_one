@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:keepass_one/services/sync/driver_config.dart';
+import 'package:keepass_one/utils/url_utils.dart';
 
 part 'webdav_config.freezed.dart';
 part 'webdav_config.g.dart';
@@ -13,14 +14,15 @@ sealed class WebDavConfig with _$WebDavConfig implements BaseDriverConfig {
   DriverType get type => DriverType.webdav;
 
   @override
-  String get name => url.split('/').last;
+  String get name => filePath?.split('/').last ?? '';
 
   @override
-  String get description => url;
+  String get description =>
+      filePath != null ? UrlUtils.join(baseUrl, filePath) : baseUrl;
 
   /// 创建WebDAV配置
   const factory WebDavConfig({
-    required String url,
+    required String baseUrl,
 
     /// 用户名
     required String username,
@@ -30,6 +32,9 @@ sealed class WebDavConfig with _$WebDavConfig implements BaseDriverConfig {
 
     /// 是否跳过TLS证书验证
     required bool tlsInsecureSkipVerify,
+
+    /// 文件路径
+    String? filePath,
   }) = _WebDavConfig;
 
   /// 从JSON映射创建

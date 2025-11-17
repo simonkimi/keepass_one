@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:keepass_one/services/sync/driver_config.dart';
 import 'package:keepass_one/services/sync/exceptions.dart';
+import 'package:keepass_one/services/sync/local/local_config.dart';
+import 'package:keepass_one/services/sync/local/local_driver.dart';
 import 'package:keepass_one/services/sync/sync_driver.dart';
 import 'package:keepass_one/services/sync/webdav/webdav.dart';
 import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
@@ -43,6 +46,17 @@ class SyncDriverFactory {
         details: e.toString(),
         originalError: e,
       );
+    }
+  }
+
+  static Future<Uint8List> getFile(BaseDriverConfig config) async {
+    switch (config) {
+      case LocalConfig localConfig:
+        return LocalDriver.getFile(localConfig);
+      case WebDavConfig webDavConfig:
+        return WebDavSyncDriver.getFile(webDavConfig);
+      default:
+        throw SyncConfigException('Unsupported driver type: ${config.type}');
     }
   }
 }

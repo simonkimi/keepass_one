@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -7,7 +9,9 @@ import 'package:keepass_one/utils/url_utils.dart';
 import 'package:keepass_one/widgets/file_picker/file_picker.dart';
 
 class WebdavSettingsPage extends HookWidget {
-  const WebdavSettingsPage({super.key});
+  const WebdavSettingsPage({super.key, this.onFileSelect});
+
+  final FutureOr<bool> Function(String)? onFileSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +152,7 @@ class WebdavSettingsPage extends HookWidget {
     bool tlsInsecureSkipVerify,
   ) async {
     final config = WebDavConfig(
-      url: url,
+      baseUrl: url,
       username: username,
       password: password,
       tlsInsecureSkipVerify: tlsInsecureSkipVerify,
@@ -158,7 +162,8 @@ class WebdavSettingsPage extends HookWidget {
 
     final path = await Navigator.of(context).push<String>(
       CupertinoPageRoute(
-        builder: (context) => FilePicker(fileSystemProvider: driver),
+        builder: (context) =>
+            FilePicker(fileSystemProvider: driver, onFileSelect: onFileSelect),
       ),
     );
 
@@ -169,7 +174,8 @@ class WebdavSettingsPage extends HookWidget {
     if (context.mounted) {
       Navigator.of(context).pop(
         WebDavConfig(
-          url: UrlUtils.join(url, path),
+          baseUrl: url,
+          filePath: path,
           username: username,
           password: password,
           tlsInsecureSkipVerify: tlsInsecureSkipVerify,

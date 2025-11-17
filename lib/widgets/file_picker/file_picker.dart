@@ -1,16 +1,18 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/services/file_system/file_system_models.dart';
 import 'package:keepass_one/services/file_system/file_system_provider.dart';
-import 'package:keepass_one/utils/platform.dart';
 import 'package:keepass_one/widgets/file_picker/file_picker_provider.dart';
 import 'package:provider/provider.dart';
 
 class FilePicker extends StatelessWidget {
-  FilePicker({super.key, required this.fileSystemProvider});
+  FilePicker({super.key, required this.fileSystemProvider, this.onFileSelect});
 
   final FileSystemProvider fileSystemProvider;
   final GlobalKey<NavigatorState> _innerNavigatorKey =
       GlobalKey<NavigatorState>();
+
+  final FutureOr<bool> Function(String)? onFileSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -72,29 +74,8 @@ class FilePicker extends StatelessWidget {
   }
 
   Future<void> _onSelectFile(BuildContext context, String path) async {
-    if (!path.endsWith('.kdbx')) {
-      final result = await showCupertinoDialog<bool>(
-        barrierDismissible: true,
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: Text('提示'),
-          content: Text('这看起来并不是一个kdbx文件, 是否任然要选择此文件?'),
-          actions: platformActionsBaseOnMobile([
-            CupertinoDialogAction(
-              child: Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            CupertinoDialogAction(
-              child: Text('确定', style: TextStyle(fontWeight: FontWeight.bold)),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ]),
-        ),
-      );
+    if (onFileSelect != null) {
+      final result = await onFileSelect!(path);
       if (result != true) {
         return;
       }

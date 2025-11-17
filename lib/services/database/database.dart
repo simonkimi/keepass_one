@@ -7,7 +7,10 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [KdbxFile, KdbxKeyFile], daos: [KdbxItemDao])
+@DriftDatabase(
+  tables: [KdbxFile, KdbxKeyFile],
+  daos: [KdbxFileDao, KdbxKeyFileDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 

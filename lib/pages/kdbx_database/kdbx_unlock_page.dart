@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:keepass_one/pages/kdbx_database/kdbx_file_page.dart';
+import 'package:keepass_one/pages/kdbx_database/kdbx_key_file_page.dart';
 import 'package:keepass_one/widgets/sheet.dart';
 
 class KdbxUnlockPage extends HookWidget {
@@ -11,6 +11,8 @@ class KdbxUnlockPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final displayPassword = useState(false);
+    final keyFile = useState<KdbxKeyFileResult?>(null);
+    final passwordController = useTextEditingController();
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(middle: Text(name)),
@@ -25,7 +27,7 @@ class KdbxUnlockPage extends HookWidget {
               children: [
                 CupertinoTextField(
                   placeholder: '密码',
-                  onChanged: (value) {},
+                  controller: passwordController,
                   obscureText: !displayPassword.value,
                   suffix: CupertinoButton(
                     padding: .zero,
@@ -40,20 +42,33 @@ class KdbxUnlockPage extends HookWidget {
                   ),
                 ),
                 SizedBox(height: 5),
-                CupertinoListTile(
-                  leading: Icon(CupertinoIcons.doc),
-                  title: Text(
-                    '添加密钥文件',
-                    style: TextStyle(
-                      color: CupertinoColors.systemBlue.resolveFrom(context),
+                ClipRRect(
+                  borderRadius: .circular(5),
+                  child: CupertinoListTile(
+                    padding: .zero,
+                    leading: Icon(CupertinoIcons.doc, size: 16),
+                    title: Text(
+                      keyFile.value?.fileName ?? '添加密钥文件',
+                      style: TextStyle(
+                        color: CupertinoColors.systemBlue.resolveFrom(context),
+                        fontSize: 16,
+                      ),
                     ),
+                    onTap: () async {
+                      final result =
+                          await showCupertinoModal<KdbxKeyFileResult>(
+                            context: context,
+                            builder: (context) => KdbxKeyFilePage(),
+                          );
+                      if (result != null) {
+                        if (result.keyHash.isNotEmpty) {
+                          keyFile.value = result;
+                        } else {
+                          keyFile.value = null;
+                        }
+                      }
+                    },
                   ),
-                  onTap: () {
-                    showCupertinoModal(
-                      context: context,
-                      builder: (context) => KdbxFileFilePage(),
-                    );
-                  },
                 ),
                 SizedBox(height: 20),
                 SizedBox(

@@ -6,5 +6,6 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-String greet({required String name}) =>
-    RustLib.instance.api.crateApiSimpleGreet(name: name);
+/// Open a KDBX key file and return the key
+Uint8List openKdbxKeyFile({required List<int> keyFile}) =>
+    RustLib.instance.api.crateApiKdbxOpenKdbxKeyFile(keyFile: keyFile);

@@ -3,6 +3,9 @@
 part of 'kdbx_dao.dart';
 
 // ignore_for_file: type=lint
-mixin _$KdbxItemDaoMixin on DatabaseAccessor<AppDatabase> {
-  $KdbxItemsTable get kdbxItems => attachedDatabase.kdbxItems;
+mixin _$KdbxFileDaoMixin on DatabaseAccessor<AppDatabase> {
+  $KdbxFileTable get kdbxFile => attachedDatabase.kdbxFile;
+}
+mixin _$KdbxKeyFileDaoMixin on DatabaseAccessor<AppDatabase> {
+  $KdbxKeyFileTable get kdbxKeyFile => attachedDatabase.kdbxKeyFile;
 }

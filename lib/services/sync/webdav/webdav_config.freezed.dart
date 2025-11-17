@@ -15,10 +15,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WebDavConfig {
 
- String get url;/// 用户名
+ String get baseUrl;/// 用户名
  String get username;/// 密码
  String get password;/// 是否跳过TLS证书验证
- bool get tlsInsecureSkipVerify;
+ bool get tlsInsecureSkipVerify;/// 文件路径
+ String? get filePath;
 /// Create a copy of WebDavConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -31,16 +32,16 @@ $WebDavConfigCopyWith<WebDavConfig> get copyWith => _$WebDavConfigCopyWithImpl<W
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfig&&(identical(other.url, url) || other.url == url)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,url,username,password,tlsInsecureSkipVerify);
+int get hashCode => Object.hash(runtimeType,baseUrl,username,password,tlsInsecureSkipVerify,filePath);
 
 @override
 String toString() {
-  return 'WebDavConfig(url: $url, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify)';
+  return 'WebDavConfig(baseUrl: $baseUrl, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
 }
 
 
@@ -51,7 +52,7 @@ abstract mixin class $WebDavConfigCopyWith<$Res>  {
   factory $WebDavConfigCopyWith(WebDavConfig value, $Res Function(WebDavConfig) _then) = _$WebDavConfigCopyWithImpl;
 @useResult
 $Res call({
- String url, String username, String password, bool tlsInsecureSkipVerify
+ String baseUrl, String username, String password, bool tlsInsecureSkipVerify, String? filePath
 });
 
 
@@ -68,13 +69,14 @@ class _$WebDavConfigCopyWithImpl<$Res>
 
 /// Create a copy of WebDavConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? baseUrl = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,Object? filePath = freezed,}) {
   return _then(_self.copyWith(
-url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+baseUrl: null == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
 as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,tlsInsecureSkipVerify: null == tlsInsecureSkipVerify ? _self.tlsInsecureSkipVerify : tlsInsecureSkipVerify // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,filePath: freezed == filePath ? _self.filePath : filePath // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -156,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  String username,  String password,  bool tlsInsecureSkipVerify)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String baseUrl,  String username,  String password,  bool tlsInsecureSkipVerify,  String? filePath)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WebDavConfig() when $default != null:
-return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVerify);case _:
+return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSkipVerify,_that.filePath);case _:
   return orElse();
 
 }
@@ -177,10 +179,10 @@ return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVer
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  String username,  String password,  bool tlsInsecureSkipVerify)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String baseUrl,  String username,  String password,  bool tlsInsecureSkipVerify,  String? filePath)  $default,) {final _that = this;
 switch (_that) {
 case _WebDavConfig():
-return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVerify);}
+return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSkipVerify,_that.filePath);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +196,10 @@ return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVer
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  String username,  String password,  bool tlsInsecureSkipVerify)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String baseUrl,  String username,  String password,  bool tlsInsecureSkipVerify,  String? filePath)?  $default,) {final _that = this;
 switch (_that) {
 case _WebDavConfig() when $default != null:
-return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVerify);case _:
+return $default(_that.baseUrl,_that.username,_that.password,_that.tlsInsecureSkipVerify,_that.filePath);case _:
   return null;
 
 }
@@ -209,16 +211,18 @@ return $default(_that.url,_that.username,_that.password,_that.tlsInsecureSkipVer
 @JsonSerializable()
 
 class _WebDavConfig extends WebDavConfig {
-  const _WebDavConfig({required this.url, required this.username, required this.password, required this.tlsInsecureSkipVerify}): super._();
+  const _WebDavConfig({required this.baseUrl, required this.username, required this.password, required this.tlsInsecureSkipVerify, this.filePath}): super._();
   factory _WebDavConfig.fromJson(Map<String, dynamic> json) => _$WebDavConfigFromJson(json);
 
-@override final  String url;
+@override final  String baseUrl;
 /// 用户名
 @override final  String username;
 /// 密码
 @override final  String password;
 /// 是否跳过TLS证书验证
 @override final  bool tlsInsecureSkipVerify;
+/// 文件路径
+@override final  String? filePath;
 
 /// Create a copy of WebDavConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +237,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebDavConfig&&(identical(other.url, url) || other.url == url)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebDavConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,url,username,password,tlsInsecureSkipVerify);
+int get hashCode => Object.hash(runtimeType,baseUrl,username,password,tlsInsecureSkipVerify,filePath);
 
 @override
 String toString() {
-  return 'WebDavConfig(url: $url, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify)';
+  return 'WebDavConfig(baseUrl: $baseUrl, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
 }
 
 
@@ -253,7 +257,7 @@ abstract mixin class _$WebDavConfigCopyWith<$Res> implements $WebDavConfigCopyWi
   factory _$WebDavConfigCopyWith(_WebDavConfig value, $Res Function(_WebDavConfig) _then) = __$WebDavConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String url, String username, String password, bool tlsInsecureSkipVerify
+ String baseUrl, String username, String password, bool tlsInsecureSkipVerify, String? filePath
 });
 
 
@@ -270,13 +274,14 @@ class __$WebDavConfigCopyWithImpl<$Res>
 
 /// Create a copy of WebDavConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? baseUrl = null,Object? username = null,Object? password = null,Object? tlsInsecureSkipVerify = null,Object? filePath = freezed,}) {
   return _then(_WebDavConfig(
-url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+baseUrl: null == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
 as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,tlsInsecureSkipVerify: null == tlsInsecureSkipVerify ? _self.tlsInsecureSkipVerify : tlsInsecureSkipVerify // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,filePath: freezed == filePath ? _self.filePath : filePath // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

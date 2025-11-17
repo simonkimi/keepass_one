@@ -20,7 +20,7 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   /// 构造函数
   WebDavSyncDriver(this.config)
     : client = newClient(
-        config.url,
+        config.baseUrl,
         user: config.username,
         password: config.password,
       );
@@ -57,7 +57,8 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
     String? path,
     void Function(int count, int total)? onProgress,
   }) async {
-    final bytes = await client.read(path ?? '', onProgress: onProgress);
+    print("config: ${config.toJson()}");
+    final bytes = await client.read(path ?? '/', onProgress: onProgress);
     return Uint8List.fromList(bytes);
   }
 
@@ -155,4 +156,11 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
 
   @override
   Future<List<FileSystemEntity>> listDirectory(String path) => list(path);
+
+  static Future<Uint8List> getFile(WebDavConfig config) async {
+    if (config.filePath == null) {
+      throw SyncConfigException('File path is required');
+    }
+    return WebDavSyncDriver(config).get(path: config.filePath);
+  }
 }

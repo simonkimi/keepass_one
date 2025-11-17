@@ -1,22 +1,29 @@
-import 'dart:convert';
+import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:keepass_one/di.dart';
-import 'package:keepass_one/pages/kdbx_add/webdav_settings.dart';
-import 'package:keepass_one/services/database/database.dart';
+import 'package:keepass_one/pages/file_selector/webdav_settings.dart';
 import 'package:keepass_one/services/sync/driver_config.dart';
 import 'package:keepass_one/services/sync/local/local_config.dart';
 import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
 
-class KdbxSourceSelectorPage extends StatelessWidget {
-  const KdbxSourceSelectorPage({super.key});
+class FileSelectorPage extends StatelessWidget {
+  const FileSelectorPage({
+    super.key,
+    required this.title,
+    required this.onSelectDriver,
+    this.onFileSelect,
+  });
+
+  final String title;
+  final ValueChanged<BaseDriverConfig?> onSelectDriver;
+  final FutureOr<bool> Function(String)? onFileSelect;
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text('数据源'),
+        middle: Text(title),
         leading: CupertinoButton(
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
@@ -59,7 +66,7 @@ class KdbxSourceSelectorPage extends StatelessWidget {
       CupertinoPageRoute(builder: (context) => WebdavSettingsPage()),
     );
     if (config != null && context.mounted) {
-      await _onSelectDriver(context, config);
+      onSelectDriver(config);
     }
   }
 
@@ -69,27 +76,6 @@ class KdbxSourceSelectorPage extends StatelessWidget {
     );
 
     if (file == null || !context.mounted || file.files.isEmpty) return;
-    await _onSelectDriver(context, LocalConfig(path: file.files.first.path!));
-  }
-
-  Future<void> _onSelectDriver(
-    BuildContext context,
-    BaseDriverConfig config,
-  ) async {
-    final configJson = jsonEncode(config.toJson());
-    getIt.get<AppDatabase>().kdbxItemDao.createKdbxItem(
-      KdbxItemsCompanion.insert(
-        name: config.name,
-        type: config.type.key,
-        description: config.description,
-        config: configJson,
-        createdAt: DateTime.now(),
-        lastAccessedAt: DateTime.fromMillisecondsSinceEpoch(0),
-        lastModifiedAt: DateTime.now(),
-        lastSyncedAt: DateTime.fromMillisecondsSinceEpoch(0),
-        lastHashValue: '',
-      ),
-    );
-    Navigator.of(context, rootNavigator: true).pop(config);
+    onSelectDriver(LocalConfig(path: file.files.first.path!));
   }
 }
