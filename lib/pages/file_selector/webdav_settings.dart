@@ -5,7 +5,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:keepass_one/services/sync/webdav/webdav.dart';
 import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
-import 'package:keepass_one/utils/url_utils.dart';
 import 'package:keepass_one/widgets/file_picker/file_picker.dart';
 
 class WebdavSettingsPage extends HookWidget {

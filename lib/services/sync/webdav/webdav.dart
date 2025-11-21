@@ -7,7 +7,7 @@ import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
 import 'package:keepass_one/services/sync/exceptions.dart';
 import 'package:keepass_one/services/sync/sync_driver.dart';
 import 'package:webdav_client/webdav_client.dart';
-import 'package:dio/dio.dart' show DioException;
+import 'package:dio/dio.dart' show DioException, ProgressCallback;
 
 /// WebDAV同步驱动实现
 class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
@@ -157,10 +157,15 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   @override
   Future<List<FileSystemEntity>> listDirectory(String path) => list(path);
 
-  static Future<Uint8List> getFile(WebDavConfig config) async {
+  static Future<Uint8List> getFile(
+    WebDavConfig config,
+    ProgressCallback? onProgress,
+  ) async {
     if (config.filePath == null) {
       throw SyncConfigException('File path is required');
     }
-    return WebDavSyncDriver(config).get(path: config.filePath);
+    return WebDavSyncDriver(
+      config,
+    ).get(path: config.filePath!, onProgress: onProgress);
   }
 }

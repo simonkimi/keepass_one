@@ -1028,20 +1028,666 @@ class KdbxKeyFileCompanion extends UpdateCompanion<KdbxKeyFileData> {
   }
 }
 
+class $KdbxFileBackupTable extends KdbxFileBackup
+    with TableInfo<$KdbxFileBackupTable, KdbxFileBackupData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $KdbxFileBackupTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kdbxFileIdMeta = const VerificationMeta(
+    'kdbxFileId',
+  );
+  @override
+  late final GeneratedColumn<int> kdbxFileId = GeneratedColumn<int>(
+    'kdbx_file_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _apiHashValueMeta = const VerificationMeta(
+    'apiHashValue',
+  );
+  @override
+  late final GeneratedColumn<String> apiHashValue = GeneratedColumn<String>(
+    'api_hash_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileHashValueMeta = const VerificationMeta(
+    'fileHashValue',
+  );
+  @override
+  late final GeneratedColumn<String> fileHashValue = GeneratedColumn<String>(
+    'file_hash_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isModifiedMeta = const VerificationMeta(
+    'isModified',
+  );
+  @override
+  late final GeneratedColumn<bool> isModified = GeneratedColumn<bool>(
+    'is_modified',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_modified" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _isSyncedMeta = const VerificationMeta(
+    'isSynced',
+  );
+  @override
+  late final GeneratedColumn<bool> isSynced = GeneratedColumn<bool>(
+    'is_synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_synced" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kdbxFileId,
+    filePath,
+    apiHashValue,
+    fileHashValue,
+    isModified,
+    isSynced,
+    createdAt,
+    lastModifiedAt,
+    lastSyncedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'kdbx_file_backup';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<KdbxFileBackupData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kdbx_file_id')) {
+      context.handle(
+        _kdbxFileIdMeta,
+        kdbxFileId.isAcceptableOrUnknown(
+          data['kdbx_file_id']!,
+          _kdbxFileIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_kdbxFileIdMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('api_hash_value')) {
+      context.handle(
+        _apiHashValueMeta,
+        apiHashValue.isAcceptableOrUnknown(
+          data['api_hash_value']!,
+          _apiHashValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('file_hash_value')) {
+      context.handle(
+        _fileHashValueMeta,
+        fileHashValue.isAcceptableOrUnknown(
+          data['file_hash_value']!,
+          _fileHashValueMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fileHashValueMeta);
+    }
+    if (data.containsKey('is_modified')) {
+      context.handle(
+        _isModifiedMeta,
+        isModified.isAcceptableOrUnknown(data['is_modified']!, _isModifiedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isModifiedMeta);
+    }
+    if (data.containsKey('is_synced')) {
+      context.handle(
+        _isSyncedMeta,
+        isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isSyncedMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  KdbxFileBackupData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return KdbxFileBackupData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kdbxFileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kdbx_file_id'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      apiHashValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}api_hash_value'],
+      ),
+      fileHashValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_hash_value'],
+      )!,
+      isModified: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_modified'],
+      )!,
+      isSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_synced'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+    );
+  }
+
+  @override
+  $KdbxFileBackupTable createAlias(String alias) {
+    return $KdbxFileBackupTable(attachedDatabase, alias);
+  }
+}
+
+class KdbxFileBackupData extends DataClass
+    implements Insertable<KdbxFileBackupData> {
+  final int id;
+  final int kdbxFileId;
+  final String filePath;
+  final String? apiHashValue;
+  final String fileHashValue;
+  final bool isModified;
+  final bool isSynced;
+  final DateTime createdAt;
+  final DateTime? lastModifiedAt;
+  final DateTime? lastSyncedAt;
+  const KdbxFileBackupData({
+    required this.id,
+    required this.kdbxFileId,
+    required this.filePath,
+    this.apiHashValue,
+    required this.fileHashValue,
+    required this.isModified,
+    required this.isSynced,
+    required this.createdAt,
+    this.lastModifiedAt,
+    this.lastSyncedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kdbx_file_id'] = Variable<int>(kdbxFileId);
+    map['file_path'] = Variable<String>(filePath);
+    if (!nullToAbsent || apiHashValue != null) {
+      map['api_hash_value'] = Variable<String>(apiHashValue);
+    }
+    map['file_hash_value'] = Variable<String>(fileHashValue);
+    map['is_modified'] = Variable<bool>(isModified);
+    map['is_synced'] = Variable<bool>(isSynced);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    return map;
+  }
+
+  KdbxFileBackupCompanion toCompanion(bool nullToAbsent) {
+    return KdbxFileBackupCompanion(
+      id: Value(id),
+      kdbxFileId: Value(kdbxFileId),
+      filePath: Value(filePath),
+      apiHashValue: apiHashValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(apiHashValue),
+      fileHashValue: Value(fileHashValue),
+      isModified: Value(isModified),
+      isSynced: Value(isSynced),
+      createdAt: Value(createdAt),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+    );
+  }
+
+  factory KdbxFileBackupData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return KdbxFileBackupData(
+      id: serializer.fromJson<int>(json['id']),
+      kdbxFileId: serializer.fromJson<int>(json['kdbxFileId']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      apiHashValue: serializer.fromJson<String?>(json['apiHashValue']),
+      fileHashValue: serializer.fromJson<String>(json['fileHashValue']),
+      isModified: serializer.fromJson<bool>(json['isModified']),
+      isSynced: serializer.fromJson<bool>(json['isSynced']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kdbxFileId': serializer.toJson<int>(kdbxFileId),
+      'filePath': serializer.toJson<String>(filePath),
+      'apiHashValue': serializer.toJson<String?>(apiHashValue),
+      'fileHashValue': serializer.toJson<String>(fileHashValue),
+      'isModified': serializer.toJson<bool>(isModified),
+      'isSynced': serializer.toJson<bool>(isSynced),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+    };
+  }
+
+  KdbxFileBackupData copyWith({
+    int? id,
+    int? kdbxFileId,
+    String? filePath,
+    Value<String?> apiHashValue = const Value.absent(),
+    String? fileHashValue,
+    bool? isModified,
+    bool? isSynced,
+    DateTime? createdAt,
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
+  }) => KdbxFileBackupData(
+    id: id ?? this.id,
+    kdbxFileId: kdbxFileId ?? this.kdbxFileId,
+    filePath: filePath ?? this.filePath,
+    apiHashValue: apiHashValue.present ? apiHashValue.value : this.apiHashValue,
+    fileHashValue: fileHashValue ?? this.fileHashValue,
+    isModified: isModified ?? this.isModified,
+    isSynced: isSynced ?? this.isSynced,
+    createdAt: createdAt ?? this.createdAt,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+  );
+  KdbxFileBackupData copyWithCompanion(KdbxFileBackupCompanion data) {
+    return KdbxFileBackupData(
+      id: data.id.present ? data.id.value : this.id,
+      kdbxFileId: data.kdbxFileId.present
+          ? data.kdbxFileId.value
+          : this.kdbxFileId,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      apiHashValue: data.apiHashValue.present
+          ? data.apiHashValue.value
+          : this.apiHashValue,
+      fileHashValue: data.fileHashValue.present
+          ? data.fileHashValue.value
+          : this.fileHashValue,
+      isModified: data.isModified.present
+          ? data.isModified.value
+          : this.isModified,
+      isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KdbxFileBackupData(')
+          ..write('id: $id, ')
+          ..write('kdbxFileId: $kdbxFileId, ')
+          ..write('filePath: $filePath, ')
+          ..write('apiHashValue: $apiHashValue, ')
+          ..write('fileHashValue: $fileHashValue, ')
+          ..write('isModified: $isModified, ')
+          ..write('isSynced: $isSynced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kdbxFileId,
+    filePath,
+    apiHashValue,
+    fileHashValue,
+    isModified,
+    isSynced,
+    createdAt,
+    lastModifiedAt,
+    lastSyncedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is KdbxFileBackupData &&
+          other.id == this.id &&
+          other.kdbxFileId == this.kdbxFileId &&
+          other.filePath == this.filePath &&
+          other.apiHashValue == this.apiHashValue &&
+          other.fileHashValue == this.fileHashValue &&
+          other.isModified == this.isModified &&
+          other.isSynced == this.isSynced &&
+          other.createdAt == this.createdAt &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.lastSyncedAt == this.lastSyncedAt);
+}
+
+class KdbxFileBackupCompanion extends UpdateCompanion<KdbxFileBackupData> {
+  final Value<int> id;
+  final Value<int> kdbxFileId;
+  final Value<String> filePath;
+  final Value<String?> apiHashValue;
+  final Value<String> fileHashValue;
+  final Value<bool> isModified;
+  final Value<bool> isSynced;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> lastSyncedAt;
+  const KdbxFileBackupCompanion({
+    this.id = const Value.absent(),
+    this.kdbxFileId = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.apiHashValue = const Value.absent(),
+    this.fileHashValue = const Value.absent(),
+    this.isModified = const Value.absent(),
+    this.isSynced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+  });
+  KdbxFileBackupCompanion.insert({
+    this.id = const Value.absent(),
+    required int kdbxFileId,
+    required String filePath,
+    this.apiHashValue = const Value.absent(),
+    required String fileHashValue,
+    required bool isModified,
+    required bool isSynced,
+    required DateTime createdAt,
+    this.lastModifiedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+  }) : kdbxFileId = Value(kdbxFileId),
+       filePath = Value(filePath),
+       fileHashValue = Value(fileHashValue),
+       isModified = Value(isModified),
+       isSynced = Value(isSynced),
+       createdAt = Value(createdAt);
+  static Insertable<KdbxFileBackupData> custom({
+    Expression<int>? id,
+    Expression<int>? kdbxFileId,
+    Expression<String>? filePath,
+    Expression<String>? apiHashValue,
+    Expression<String>? fileHashValue,
+    Expression<bool>? isModified,
+    Expression<bool>? isSynced,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? lastSyncedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kdbxFileId != null) 'kdbx_file_id': kdbxFileId,
+      if (filePath != null) 'file_path': filePath,
+      if (apiHashValue != null) 'api_hash_value': apiHashValue,
+      if (fileHashValue != null) 'file_hash_value': fileHashValue,
+      if (isModified != null) 'is_modified': isModified,
+      if (isSynced != null) 'is_synced': isSynced,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+    });
+  }
+
+  KdbxFileBackupCompanion copyWith({
+    Value<int>? id,
+    Value<int>? kdbxFileId,
+    Value<String>? filePath,
+    Value<String?>? apiHashValue,
+    Value<String>? fileHashValue,
+    Value<bool>? isModified,
+    Value<bool>? isSynced,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? lastSyncedAt,
+  }) {
+    return KdbxFileBackupCompanion(
+      id: id ?? this.id,
+      kdbxFileId: kdbxFileId ?? this.kdbxFileId,
+      filePath: filePath ?? this.filePath,
+      apiHashValue: apiHashValue ?? this.apiHashValue,
+      fileHashValue: fileHashValue ?? this.fileHashValue,
+      isModified: isModified ?? this.isModified,
+      isSynced: isSynced ?? this.isSynced,
+      createdAt: createdAt ?? this.createdAt,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kdbxFileId.present) {
+      map['kdbx_file_id'] = Variable<int>(kdbxFileId.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (apiHashValue.present) {
+      map['api_hash_value'] = Variable<String>(apiHashValue.value);
+    }
+    if (fileHashValue.present) {
+      map['file_hash_value'] = Variable<String>(fileHashValue.value);
+    }
+    if (isModified.present) {
+      map['is_modified'] = Variable<bool>(isModified.value);
+    }
+    if (isSynced.present) {
+      map['is_synced'] = Variable<bool>(isSynced.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KdbxFileBackupCompanion(')
+          ..write('id: $id, ')
+          ..write('kdbxFileId: $kdbxFileId, ')
+          ..write('filePath: $filePath, ')
+          ..write('apiHashValue: $apiHashValue, ')
+          ..write('fileHashValue: $fileHashValue, ')
+          ..write('isModified: $isModified, ')
+          ..write('isSynced: $isSynced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $KdbxFileTable kdbxFile = $KdbxFileTable(this);
   late final $KdbxKeyFileTable kdbxKeyFile = $KdbxKeyFileTable(this);
+  late final $KdbxFileBackupTable kdbxFileBackup = $KdbxFileBackupTable(this);
   late final KdbxFileDao kdbxFileDao = KdbxFileDao(this as AppDatabase);
   late final KdbxKeyFileDao kdbxKeyFileDao = KdbxKeyFileDao(
+    this as AppDatabase,
+  );
+  late final KdbxFileBackupDao kdbxFileBackupDao = KdbxFileBackupDao(
     this as AppDatabase,
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [kdbxFile, kdbxKeyFile];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    kdbxFile,
+    kdbxKeyFile,
+    kdbxFileBackup,
+  ];
 }
 
 typedef $$KdbxFileTableCreateCompanionBuilder =
@@ -1558,6 +2204,313 @@ typedef $$KdbxKeyFileTableProcessedTableManager =
       KdbxKeyFileData,
       PrefetchHooks Function()
     >;
+typedef $$KdbxFileBackupTableCreateCompanionBuilder =
+    KdbxFileBackupCompanion Function({
+      Value<int> id,
+      required int kdbxFileId,
+      required String filePath,
+      Value<String?> apiHashValue,
+      required String fileHashValue,
+      required bool isModified,
+      required bool isSynced,
+      required DateTime createdAt,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> lastSyncedAt,
+    });
+typedef $$KdbxFileBackupTableUpdateCompanionBuilder =
+    KdbxFileBackupCompanion Function({
+      Value<int> id,
+      Value<int> kdbxFileId,
+      Value<String> filePath,
+      Value<String?> apiHashValue,
+      Value<String> fileHashValue,
+      Value<bool> isModified,
+      Value<bool> isSynced,
+      Value<DateTime> createdAt,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> lastSyncedAt,
+    });
+
+class $$KdbxFileBackupTableFilterComposer
+    extends Composer<_$AppDatabase, $KdbxFileBackupTable> {
+  $$KdbxFileBackupTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get kdbxFileId => $composableBuilder(
+    column: $table.kdbxFileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get apiHashValue => $composableBuilder(
+    column: $table.apiHashValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileHashValue => $composableBuilder(
+    column: $table.fileHashValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isModified => $composableBuilder(
+    column: $table.isModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$KdbxFileBackupTableOrderingComposer
+    extends Composer<_$AppDatabase, $KdbxFileBackupTable> {
+  $$KdbxFileBackupTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get kdbxFileId => $composableBuilder(
+    column: $table.kdbxFileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get apiHashValue => $composableBuilder(
+    column: $table.apiHashValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileHashValue => $composableBuilder(
+    column: $table.fileHashValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isModified => $composableBuilder(
+    column: $table.isModified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$KdbxFileBackupTableAnnotationComposer
+    extends Composer<_$AppDatabase, $KdbxFileBackupTable> {
+  $$KdbxFileBackupTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get kdbxFileId => $composableBuilder(
+    column: $table.kdbxFileId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get apiHashValue => $composableBuilder(
+    column: $table.apiHashValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fileHashValue => $composableBuilder(
+    column: $table.fileHashValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isModified => $composableBuilder(
+    column: $table.isModified,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isSynced =>
+      $composableBuilder(column: $table.isSynced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$KdbxFileBackupTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $KdbxFileBackupTable,
+          KdbxFileBackupData,
+          $$KdbxFileBackupTableFilterComposer,
+          $$KdbxFileBackupTableOrderingComposer,
+          $$KdbxFileBackupTableAnnotationComposer,
+          $$KdbxFileBackupTableCreateCompanionBuilder,
+          $$KdbxFileBackupTableUpdateCompanionBuilder,
+          (
+            KdbxFileBackupData,
+            BaseReferences<
+              _$AppDatabase,
+              $KdbxFileBackupTable,
+              KdbxFileBackupData
+            >,
+          ),
+          KdbxFileBackupData,
+          PrefetchHooks Function()
+        > {
+  $$KdbxFileBackupTableTableManager(
+    _$AppDatabase db,
+    $KdbxFileBackupTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$KdbxFileBackupTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$KdbxFileBackupTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$KdbxFileBackupTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> kdbxFileId = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<String?> apiHashValue = const Value.absent(),
+                Value<String> fileHashValue = const Value.absent(),
+                Value<bool> isModified = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+              }) => KdbxFileBackupCompanion(
+                id: id,
+                kdbxFileId: kdbxFileId,
+                filePath: filePath,
+                apiHashValue: apiHashValue,
+                fileHashValue: fileHashValue,
+                isModified: isModified,
+                isSynced: isSynced,
+                createdAt: createdAt,
+                lastModifiedAt: lastModifiedAt,
+                lastSyncedAt: lastSyncedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int kdbxFileId,
+                required String filePath,
+                Value<String?> apiHashValue = const Value.absent(),
+                required String fileHashValue,
+                required bool isModified,
+                required bool isSynced,
+                required DateTime createdAt,
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+              }) => KdbxFileBackupCompanion.insert(
+                id: id,
+                kdbxFileId: kdbxFileId,
+                filePath: filePath,
+                apiHashValue: apiHashValue,
+                fileHashValue: fileHashValue,
+                isModified: isModified,
+                isSynced: isSynced,
+                createdAt: createdAt,
+                lastModifiedAt: lastModifiedAt,
+                lastSyncedAt: lastSyncedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$KdbxFileBackupTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $KdbxFileBackupTable,
+      KdbxFileBackupData,
+      $$KdbxFileBackupTableFilterComposer,
+      $$KdbxFileBackupTableOrderingComposer,
+      $$KdbxFileBackupTableAnnotationComposer,
+      $$KdbxFileBackupTableCreateCompanionBuilder,
+      $$KdbxFileBackupTableUpdateCompanionBuilder,
+      (
+        KdbxFileBackupData,
+        BaseReferences<_$AppDatabase, $KdbxFileBackupTable, KdbxFileBackupData>,
+      ),
+      KdbxFileBackupData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1566,4 +2519,6 @@ class $AppDatabaseManager {
       $$KdbxFileTableTableManager(_db, _db.kdbxFile);
   $$KdbxKeyFileTableTableManager get kdbxKeyFile =>
       $$KdbxKeyFileTableTableManager(_db, _db.kdbxKeyFile);
+  $$KdbxFileBackupTableTableManager get kdbxFileBackup =>
+      $$KdbxFileBackupTableTableManager(_db, _db.kdbxFileBackup);
 }

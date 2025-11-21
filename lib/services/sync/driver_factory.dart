@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:keepass_one/services/sync/driver_config.dart';
 import 'package:keepass_one/services/sync/exceptions.dart';
 import 'package:keepass_one/services/sync/local/local_config.dart';
@@ -49,12 +50,15 @@ class SyncDriverFactory {
     }
   }
 
-  static Future<Uint8List> getFile(BaseDriverConfig config) async {
+  static Future<Uint8List> getFile(
+    BaseDriverConfig config, {
+    ProgressCallback? onProgress,
+  }) async {
     switch (config) {
       case LocalConfig localConfig:
-        return LocalDriver.getFile(localConfig);
+        return LocalDriver.getFile(localConfig, onProgress);
       case WebDavConfig webDavConfig:
-        return WebDavSyncDriver.getFile(webDavConfig);
+        return WebDavSyncDriver.getFile(webDavConfig, onProgress);
       default:
         throw SyncConfigException('Unsupported driver type: ${config.type}');
     }
