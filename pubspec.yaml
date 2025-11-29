@@ -17,8 +17,7 @@ dependencies:
     path: rust_builder
   flutter_rust_bridge: 2.11.1
   flutter_dotenv: ^6.0.0
-
-  webdav_client: ^1.2.2
+  
   dartssh2: ^2.13.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
@@ -38,6 +37,8 @@ dependencies:
   shared_preferences: ^2.5.3
   path: ^1.9.1
   crypto: ^3.0.7
+  xml: ^6.6.1
+  dio_http_formatter: ^3.3.1
 
 
 dev_dependencies:

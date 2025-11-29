@@ -6,8 +6,9 @@ import 'package:keepass_one/services/file_system/file_system_provider.dart';
 import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
 import 'package:keepass_one/services/sync/exceptions.dart';
 import 'package:keepass_one/services/sync/sync_driver.dart';
-import 'package:webdav_client/webdav_client.dart';
-import 'package:dio/dio.dart' show DioException, ProgressCallback;
+import 'package:dio/dio.dart' show DioException, ProgressCallback, Dio;
+import 'package:keepass_one/services/webdav/auth.dart';
+import 'package:keepass_one/services/webdav/webdav_client.dart';
 
 /// WebDAV同步驱动实现
 class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
@@ -15,38 +16,44 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   final WebDavConfig config;
 
   /// WebDAV客户端
-  final Client client;
+  final WebdavClient client;
 
   /// 构造函数
   WebDavSyncDriver(this.config)
-    : client = newClient(
-        config.baseUrl,
-        user: config.username,
-        password: config.password,
+    : client = WebdavClient(
+        baseUrl: config.baseUrl,
+        insecureSkipVerify: config.tlsInsecureSkipVerify,
+        auth: switch (config) {
+          WebDavConfigBasic(:final username, :final password) =>
+            WebdavBasicAuth(username: username, password: password),
+          WebDavConfigToken(:final token) => WebdavTokenAuth(token: token),
+          WebDavConfigNone() => WebdavNoneAuth(),
+        },
       );
 
   @override
   Future<List<FileSystemEntity>> list(String path) async {
     try {
-      final entities = <FileSystemEntity>[];
-      final items = await client.readDir(path);
-      for (final item in items) {
-        final name = _getNameFromPath(item.path ?? '');
-        final lastModified = item.mTime;
+      // final entities = <FileSystemEntity>[];
+      // final items = await client.readDir(path);
+      // for (final item in items) {
+      //   final name = _getNameFromPath(item.path ?? '');
+      //   final lastModified = item.mTime;
 
-        final entity = FileSystemEntity(
-          name: name,
-          path: item.path ?? '',
-          isDirectory: item.isDir == true,
-          lastModified: lastModified,
-          size: item.size,
-          extension: item.isDir == true ? null : item.name?.split('.').last,
-          isHidden: false,
-        );
-        entities.add(entity);
-      }
+      //   final entity = FileSystemEntity(
+      //     name: name,
+      //     path: item.path ?? '',
+      //     isDirectory: item.isDir == true,
+      //     lastModified: lastModified,
+      //     size: item.size,
+      //     extension: item.isDir == true ? null : item.name?.split('.').last,
+      //     isHidden: false,
+      //   );
+      //   entities.add(entity);
+      // }
 
-      return entities;
+      // return entities;
+      return [];
     } catch (e) {
       throw _handleWebDavException(e, 'Failed to list directory: $path');
     }
@@ -58,8 +65,9 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
     void Function(int count, int total)? onProgress,
   }) async {
     print("config: ${config.toJson()}");
-    final bytes = await client.read(path ?? '/', onProgress: onProgress);
-    return Uint8List.fromList(bytes);
+    // final bytes = await client.read(path ?? '/', onProgress: onProgress);
+    // return Uint8List.fromList(bytes);
+    return Uint8List.fromList([]);
   }
 
   @override
@@ -69,7 +77,7 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
     void Function(int count, int total)? onProgress,
   }) async {
     try {
-      await client.write(path, data, onProgress: onProgress);
+      // await client.write(path, data, onProgress: onProgress);
     } catch (e) {
       throw _handleWebDavException(e, 'Failed to write file: $path');
     }
@@ -78,7 +86,7 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   @override
   Future<void> ping() async {
     try {
-      await client.ping();
+      // await client.ping();
     } catch (e) {
       throw _handleWebDavException(e, 'Failed to connect to WebDAV server');
     }

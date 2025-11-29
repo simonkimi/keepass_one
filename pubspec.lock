@@ -225,6 +225,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "5.9.0"
+  dio_http_formatter:
+    dependency: "direct main"
+    description:
+      name: dio_http_formatter
+      sha256: "05e3f7c839f291acc9bd1df33d5314905da677375007d71437914ed66c8823be"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.3.1"
   dio_web_adapter:
     dependency: transitive
     description:
@@ -495,6 +503,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "5.1.1"
+  logger:
+    dependency: transitive
+    description:
+      name: logger
+      sha256: a7967e31b703831a893bbc3c3dd11db08126fe5f369b5c648a36f821979f5be3
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.6.2"
   logging:
     dependency: transitive
     description:
@@ -939,14 +955,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.0.3"
-  webdav_client:
-    dependency: "direct main"
-    description:
-      name: webdav_client
-      sha256: "682fffc50b61dc0e8f46717171db03bf9caaa17347be41c0c91e297553bf86b2"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.2.2"
   webdriver:
     dependency: transitive
     description:
@@ -972,7 +980,7 @@ packages:
     source: hosted
     version: "1.1.0"
   xml:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: xml
       sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"

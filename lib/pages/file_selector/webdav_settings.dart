@@ -150,7 +150,7 @@ class WebdavSettingsPage extends HookWidget {
     String password,
     bool tlsInsecureSkipVerify,
   ) async {
-    final config = WebDavConfig(
+    final config = WebDavConfig.basic(
       baseUrl: url,
       username: username,
       password: password,
@@ -172,7 +172,7 @@ class WebdavSettingsPage extends HookWidget {
 
     if (context.mounted) {
       Navigator.of(context).pop(
-        WebDavConfig(
+        WebDavConfig.basic(
           baseUrl: url,
           filePath: path,
           username: username,

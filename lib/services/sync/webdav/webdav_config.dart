@@ -20,22 +20,26 @@ sealed class WebDavConfig with _$WebDavConfig implements BaseDriverConfig {
   String get description =>
       filePath != null ? UrlUtils.join(baseUrl, filePath) : baseUrl;
 
-  /// 创建WebDAV配置
-  const factory WebDavConfig({
+  const factory WebDavConfig.basic({
     required String baseUrl,
-
-    /// 用户名
     required String username,
-
-    /// 密码
     required String password,
-
-    /// 是否跳过TLS证书验证
     required bool tlsInsecureSkipVerify,
-
-    /// 文件路径
     String? filePath,
-  }) = _WebDavConfig;
+  }) = WebDavConfigBasic;
+
+  const factory WebDavConfig.token({
+    required String baseUrl,
+    required String token,
+    required bool tlsInsecureSkipVerify,
+    String? filePath,
+  }) = WebDavConfigToken;
+
+  const factory WebDavConfig.none({
+    required String baseUrl,
+    required bool tlsInsecureSkipVerify,
+    String? filePath,
+  }) = WebDavConfigNone;
 
   /// 从JSON映射创建
   factory WebDavConfig.fromJson(Map<String, dynamic> json) =>
