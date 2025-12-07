@@ -1,4 +1,5 @@
 import 'package:keepass_one/services/webdav/auth.dart';
+import 'package:keepass_one/services/webdav/file.dart';
 import 'package:keepass_one/services/webdav/webdav_client.dart';
 
 Future<void> main() async {
@@ -11,6 +12,23 @@ Future<void> main() async {
     auth: WebdavBasicAuth(username: username, password: password),
   );
 
-  final bytes = await client.readDir("");
-  print(bytes);
+  final entities = await client.readDir("/");
+  for (final entity in entities) {
+    await walkEntity(client, entity);
+  }
+}
+
+Future<void> walkEntity(WebdavClient client, WebdavEntiry entiry) async {
+  switch (entiry) {
+    case WebdavEntiryDirectory dir:
+      print(dir);
+      final entities = await client.readDir(dir.path ?? '');
+      for (final entity in entities) {
+        await walkEntity(client, entity);
+      }
+      break;
+    case WebdavEntiryFile file:
+      print(file.path);
+      break;
+  }
 }

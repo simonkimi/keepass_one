@@ -8,6 +8,7 @@ import 'package:keepass_one/services/sync/exceptions.dart';
 import 'package:keepass_one/services/sync/sync_driver.dart';
 import 'package:dio/dio.dart' show DioException, ProgressCallback, Dio;
 import 'package:keepass_one/services/webdav/auth.dart';
+import 'package:keepass_one/services/webdav/file.dart';
 import 'package:keepass_one/services/webdav/webdav_client.dart';
 
 /// WebDAV同步驱动实现
@@ -34,26 +35,34 @@ class WebDavSyncDriver implements SyncDriver, FileSystemProvider {
   @override
   Future<List<FileSystemEntity>> list(String path) async {
     try {
-      // final entities = <FileSystemEntity>[];
-      // final items = await client.readDir(path);
-      // for (final item in items) {
-      //   final name = _getNameFromPath(item.path ?? '');
-      //   final lastModified = item.mTime;
+      final entities = <FileSystemEntity>[];
+      final items = await client.readDir(path);
 
-      //   final entity = FileSystemEntity(
-      //     name: name,
-      //     path: item.path ?? '',
-      //     isDirectory: item.isDir == true,
-      //     lastModified: lastModified,
-      //     size: item.size,
-      //     extension: item.isDir == true ? null : item.name?.split('.').last,
-      //     isHidden: false,
-      //   );
-      //   entities.add(entity);
-      // }
-
-      // return entities;
-      return [];
+      for (final item in items) {
+        switch (item) {
+          case WebdavEntiryDirectory dir:
+            entities.add(
+              FileSystemEntity.directory(
+                name: dir.name ?? '',
+                path: dir.path ?? '',
+                isHidden: false,
+                lastModified: dir.lastModified,
+              ),
+            );
+            break;
+          case WebdavEntiryFile file:
+            entities.add(
+              FileSystemEntity.file(
+                name: file.name ?? '',
+                path: file.path ?? '',
+                isHidden: false,
+                lastModified: file.lastModified,
+                size: file.size,
+              ),
+            );
+        }
+      }
+      return entities;
     } catch (e) {
       throw _handleWebDavException(e, 'Failed to list directory: $path');
     }

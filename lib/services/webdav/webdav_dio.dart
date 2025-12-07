@@ -67,6 +67,8 @@ class WebdavDio {
 
     return response;
   }
+
+  Dio get dio => _dio;
 }
 
 class WebdavAuthInterceptor implements Interceptor {
