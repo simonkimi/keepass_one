@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'webdav_config.dart';
@@ -9,6 +9,7 @@ part of 'webdav_config.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 WebDavConfig _$WebDavConfigFromJson(
@@ -55,16 +56,21 @@ $WebDavConfigCopyWith<WebDavConfig> get copyWith => _$WebDavConfigCopyWithImpl<W
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfig&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
+  final _this = this as WebDavConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfig&&(identical(other.baseUrl, _this.baseUrl) || other.baseUrl == _this.baseUrl)&&(identical(other.tlsInsecureSkipVerify, _this.tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == _this.tlsInsecureSkipVerify)&&(identical(other.filePath, _this.filePath) || other.filePath == _this.filePath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,baseUrl,tlsInsecureSkipVerify,filePath);
+int get hashCode {
+  final _this = this as WebDavConfig;
+  return Object.hash(runtimeType,_this.baseUrl,_this.tlsInsecureSkipVerify,_this.filePath);
+}
 
 @override
 String toString() {
-  return 'WebDavConfig(baseUrl: $baseUrl, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
+  final _this = this as WebDavConfig;
+  return 'WebDavConfig(baseUrl: ${_this.baseUrl}, tlsInsecureSkipVerify: ${_this.tlsInsecureSkipVerify}, filePath: ${_this.filePath})';
 }
 
 
@@ -244,7 +250,7 @@ return none(_that.baseUrl,_that.tlsInsecureSkipVerify,_that.filePath);case _:
 @JsonSerializable()
 
 class WebDavConfigBasic extends WebDavConfig {
-  const WebDavConfigBasic({required this.baseUrl, required this.username, required this.password, required this.tlsInsecureSkipVerify, this.filePath, final  String? $type}): $type = $type ?? 'basic',super._();
+  const WebDavConfigBasic({required this.baseUrl, required this.username, required this.password, required this.tlsInsecureSkipVerify, this.filePath,  String? $type}): $type = $type ?? 'basic',super._();
   factory WebDavConfigBasic.fromJson(Map<String, dynamic> json) => _$WebDavConfigBasicFromJson(json);
 
 @override final  String baseUrl;
@@ -270,16 +276,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfigBasic&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfigBasic&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.username, username) || other.username == username)&&(identical(other.password, password) || other.password == password)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,baseUrl,username,password,tlsInsecureSkipVerify,filePath);
+int get hashCode {
+    return Object.hash(runtimeType,baseUrl,username,password,tlsInsecureSkipVerify,filePath);
+}
 
 @override
 String toString() {
-  return 'WebDavConfig.basic(baseUrl: $baseUrl, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
+    return 'WebDavConfig.basic(baseUrl: $baseUrl, username: $username, password: $password, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
 }
 
 
@@ -325,7 +333,7 @@ as String?,
 @JsonSerializable()
 
 class WebDavConfigToken extends WebDavConfig {
-  const WebDavConfigToken({required this.baseUrl, required this.token, required this.tlsInsecureSkipVerify, this.filePath, final  String? $type}): $type = $type ?? 'token',super._();
+  const WebDavConfigToken({required this.baseUrl, required this.token, required this.tlsInsecureSkipVerify, this.filePath,  String? $type}): $type = $type ?? 'token',super._();
   factory WebDavConfigToken.fromJson(Map<String, dynamic> json) => _$WebDavConfigTokenFromJson(json);
 
 @override final  String baseUrl;
@@ -350,16 +358,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfigToken&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.token, token) || other.token == token)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfigToken&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.token, token) || other.token == token)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,baseUrl,token,tlsInsecureSkipVerify,filePath);
+int get hashCode {
+    return Object.hash(runtimeType,baseUrl,token,tlsInsecureSkipVerify,filePath);
+}
 
 @override
 String toString() {
-  return 'WebDavConfig.token(baseUrl: $baseUrl, token: $token, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
+    return 'WebDavConfig.token(baseUrl: $baseUrl, token: $token, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
 }
 
 
@@ -404,7 +414,7 @@ as String?,
 @JsonSerializable()
 
 class WebDavConfigNone extends WebDavConfig {
-  const WebDavConfigNone({required this.baseUrl, required this.tlsInsecureSkipVerify, this.filePath, final  String? $type}): $type = $type ?? 'none',super._();
+  const WebDavConfigNone({required this.baseUrl, required this.tlsInsecureSkipVerify, this.filePath,  String? $type}): $type = $type ?? 'none',super._();
   factory WebDavConfigNone.fromJson(Map<String, dynamic> json) => _$WebDavConfigNoneFromJson(json);
 
 @override final  String baseUrl;
@@ -428,16 +438,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfigNone&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is WebDavConfigNone&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.tlsInsecureSkipVerify, tlsInsecureSkipVerify) || other.tlsInsecureSkipVerify == tlsInsecureSkipVerify)&&(identical(other.filePath, filePath) || other.filePath == filePath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,baseUrl,tlsInsecureSkipVerify,filePath);
+int get hashCode {
+    return Object.hash(runtimeType,baseUrl,tlsInsecureSkipVerify,filePath);
+}
 
 @override
 String toString() {
-  return 'WebDavConfig.none(baseUrl: $baseUrl, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
+    return 'WebDavConfig.none(baseUrl: $baseUrl, tlsInsecureSkipVerify: $tlsInsecureSkipVerify, filePath: $filePath)';
 }
 
 

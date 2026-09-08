@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'file.dart';
@@ -9,6 +9,7 @@ part of 'file.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $WebdavEntiryCopyWith<WebdavEntiry> get copyWith => _$WebdavEntiryCopyWithImpl<W
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebdavEntiry&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.etag, etag) || other.etag == etag)&&(identical(other.lastModified, lastModified) || other.lastModified == lastModified));
+  final _this = this as WebdavEntiry;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebdavEntiry&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.path, _this.path) || other.path == _this.path)&&(identical(other.etag, _this.etag) || other.etag == _this.etag)&&(identical(other.lastModified, _this.lastModified) || other.lastModified == _this.lastModified));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,path,etag,lastModified);
+int get hashCode {
+  final _this = this as WebdavEntiry;
+  return Object.hash(runtimeType,_this.name,_this.path,_this.etag,_this.lastModified);
+}
 
 @override
 String toString() {
-  return 'WebdavEntiry(name: $name, path: $path, etag: $etag, lastModified: $lastModified)';
+  final _this = this as WebdavEntiry;
+  return 'WebdavEntiry(name: ${_this.name}, path: ${_this.path}, etag: ${_this.etag}, lastModified: ${_this.lastModified})';
 }
 
 
@@ -230,16 +236,18 @@ $WebdavEntiryFileCopyWith<WebdavEntiryFile> get copyWith => _$WebdavEntiryFileCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebdavEntiryFile&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.size, size) || other.size == size)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&(identical(other.etag, etag) || other.etag == etag)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastModified, lastModified) || other.lastModified == lastModified));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is WebdavEntiryFile&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.size, size) || other.size == size)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&(identical(other.etag, etag) || other.etag == etag)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastModified, lastModified) || other.lastModified == lastModified));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,path,size,contentType,etag,createdAt,lastModified);
+int get hashCode {
+    return Object.hash(runtimeType,name,path,size,contentType,etag,createdAt,lastModified);
+}
 
 @override
 String toString() {
-  return 'WebdavEntiry.file(name: $name, path: $path, size: $size, contentType: $contentType, etag: $etag, createdAt: $createdAt, lastModified: $lastModified)';
+    return 'WebdavEntiry.file(name: $name, path: $path, size: $size, contentType: $contentType, etag: $etag, createdAt: $createdAt, lastModified: $lastModified)';
 }
 
 
@@ -306,16 +314,18 @@ $WebdavEntiryDirectoryCopyWith<WebdavEntiryDirectory> get copyWith => _$WebdavEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebdavEntiryDirectory&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.lastModified, lastModified) || other.lastModified == lastModified)&&(identical(other.createdTime, createdTime) || other.createdTime == createdTime)&&(identical(other.etag, etag) || other.etag == etag));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is WebdavEntiryDirectory&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.lastModified, lastModified) || other.lastModified == lastModified)&&(identical(other.createdTime, createdTime) || other.createdTime == createdTime)&&(identical(other.etag, etag) || other.etag == etag));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,path,lastModified,createdTime,etag);
+int get hashCode {
+    return Object.hash(runtimeType,name,path,lastModified,createdTime,etag);
+}
 
 @override
 String toString() {
-  return 'WebdavEntiry.directory(name: $name, path: $path, lastModified: $lastModified, createdTime: $createdTime, etag: $etag)';
+    return 'WebdavEntiry.directory(name: $name, path: $path, lastModified: $lastModified, createdTime: $createdTime, etag: $etag)';
 }
 
 

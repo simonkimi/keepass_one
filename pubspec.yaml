@@ -5,7 +5,7 @@ publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.0-290.4.beta
+  sdk: ^3.13.0
 
 dependencies:
   flutter:
@@ -15,40 +15,39 @@ dependencies:
   cupertino_icons: ^1.0.8
   rust_lib_keepass_one:
     path: rust_builder
-  flutter_rust_bridge: 2.11.1
+  flutter_rust_bridge: 2.13.0
   flutter_dotenv: ^6.0.0
   
-  dartssh2: ^2.13.0
+  dartssh2: ^4.1.0
   freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   dio: ^5.9.0
 
-  drift: ^2.29.0
-  drift_flutter: ^0.2.7
+  drift: ^2.34.4
+  drift_flutter: ^0.3.1
   path_provider: ^2.1.5
   collection: ^1.19.1
 
-  drift_dev: ^2.29.0
-  build_runner: ^2.9.0
-  font_awesome_flutter: ^10.12.0
+  drift_dev: ^2.34.6
+  font_awesome_flutter: ^11.0.0
   flutter_hooks: ^0.21.3+1
-  file_picker: ^10.3.3
-  get_it: ^8.2.0
+  file_picker: ^12.2.0
+  get_it: ^9.2.1
   shared_preferences: ^2.5.3
   path: ^1.9.1
   crypto: ^3.0.7
-  xml: ^6.6.1
+  xml: ^7.0.1
   dio_http_formatter: ^3.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   integration_test:
     sdk: flutter
-  build_runner: ^2.9.0
-  freezed: ^3.2.3
+  build_runner: ^2.16.1
+  freezed: ^4.0.1
   json_serializable: ^6.11.1
 
 flutter:

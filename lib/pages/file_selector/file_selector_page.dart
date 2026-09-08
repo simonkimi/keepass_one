@@ -71,11 +71,11 @@ class FileSelectorPage extends StatelessWidget {
   }
 
   Future<void> _onSelectLocal(BuildContext context) async {
-    final FilePickerResult? file = await FilePicker.platform.pickFiles(
+    final file = await FilePicker.pickFile(
       type: .any,
     );
 
-    if (file == null || !context.mounted || file.files.isEmpty) return;
-    onSelectDriver(LocalConfig(path: file.files.first.path!));
+    if (file == null || !context.mounted || file.path == null) return;
+    onSelectDriver(LocalConfig(path: file.path!));
   }
 }

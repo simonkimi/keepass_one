@@ -1690,32 +1690,30 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ];
 }
 
-typedef $$KdbxFileTableCreateCompanionBuilder =
-    KdbxFileCompanion Function({
-      Value<int> id,
-      required String name,
-      required String description,
-      required String type,
-      required String config,
-      required DateTime createdAt,
-      required DateTime lastAccessedAt,
-      required DateTime lastModifiedAt,
-      required DateTime lastSyncedAt,
-      required String lastHashValue,
-    });
-typedef $$KdbxFileTableUpdateCompanionBuilder =
-    KdbxFileCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<String> description,
-      Value<String> type,
-      Value<String> config,
-      Value<DateTime> createdAt,
-      Value<DateTime> lastAccessedAt,
-      Value<DateTime> lastModifiedAt,
-      Value<DateTime> lastSyncedAt,
-      Value<String> lastHashValue,
-    });
+typedef $$KdbxFileTableCreateCompanionBuilder = KdbxFileCompanion Function({
+  Value<int> id,
+  required String name,
+  required String description,
+  required String type,
+  required String config,
+  required DateTime createdAt,
+  required DateTime lastAccessedAt,
+  required DateTime lastModifiedAt,
+  required DateTime lastSyncedAt,
+  required String lastHashValue,
+});
+typedef $$KdbxFileTableUpdateCompanionBuilder = KdbxFileCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<String> description,
+  Value<String> type,
+  Value<String> config,
+  Value<DateTime> createdAt,
+  Value<DateTime> lastAccessedAt,
+  Value<DateTime> lastModifiedAt,
+  Value<DateTime> lastSyncedAt,
+  Value<String> lastHashValue,
+});
 
 class $$KdbxFileTableFilterComposer
     extends Composer<_$AppDatabase, $KdbxFileTable> {
@@ -1965,7 +1963,16 @@ class $$KdbxFileTableTableManager
                 lastHashValue: lastHashValue,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$KdbxFileTable, KdbxFileData>(table),
+                  BaseReferences<_$AppDatabase, $KdbxFileTable, KdbxFileData>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -2180,7 +2187,16 @@ class $$KdbxKeyFileTableTableManager
                 lastModifiedAt: lastModifiedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$KdbxKeyFileTable, KdbxKeyFileData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $KdbxKeyFileTable,
+                    KdbxKeyFileData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -2487,7 +2503,16 @@ class $$KdbxFileBackupTableTableManager
                 lastSyncedAt: lastSyncedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$KdbxFileBackupTable, KdbxFileBackupData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $KdbxFileBackupTable,
+                    KdbxFileBackupData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
