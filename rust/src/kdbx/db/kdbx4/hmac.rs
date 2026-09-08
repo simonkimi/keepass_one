@@ -10,6 +10,12 @@ const HMAC_BLOCK_SIZE: usize = 1024 * 1024; // 1MB
 const KDBX4_MAIN_HMAC_SUFFIX: [u8; 1] = hex!("01");
 const KDBX4_HEADER_HMAC_SUFFIX: [u8; 8] = hex!("FFFFFFFFFFFFFFFF");
 
+fn read_bytes(data: &[u8], pos: usize, len: usize) -> Result<&[u8], CryptoError> {
+    data.get(pos..)
+        .and_then(|rest| rest.get(..len))
+        .ok_or(CryptoError::UnexpectedEof)
+}
+
 pub fn parse_hmac_block(
     data: &[u8],
     hmac_key: &GenericArray<u8, U64>,
@@ -19,12 +25,12 @@ pub fn parse_hmac_block(
     let mut block_index: u64 = 0;
 
     loop {
-        let block_hmac = &data[pos..pos + 32];
+        let block_hmac = read_bytes(data, pos, 32)?;
         pos += 32;
-        let block_length_buf = &data[pos..pos + 4];
+        let block_length_buf = read_bytes(data, pos, 4)?;
         pos += 4;
         let block_length = LE::read_u32(block_length_buf) as usize;
-        let block_data = &data[pos..pos + block_length];
+        let block_data = read_bytes(data, pos, block_length)?;
         pos += block_length;
 
         let mut block_index_buf = [0u8; 8];
@@ -32,15 +38,11 @@ pub fn parse_hmac_block(
 
         let hmac_block_key = hash::calculate_sha512_multiple(&[&block_index_buf, &hmac_key]);
 
-        if block_hmac
-            != hash::calculate_hmac_multiple(
-                &[&block_index_buf, &block_length_buf, &block_data],
-                &hmac_block_key,
-            )?
-            .as_slice()
-        {
-            return Err(CryptoError::HmacMismatch);
-        }
+        hash::verify_hmac_multiple(
+            &[&block_index_buf, block_length_buf, block_data],
+            &hmac_block_key,
+            block_hmac,
+        )?;
 
         block_index += 1;
         if block_length == 0 {
@@ -120,6 +122,7 @@ pub fn calc_kdbx4_header_hmac_key(hmac_key: &GenericArray<u8, U64>) -> GenericAr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crypto::errors::CryptoError;
     use std::io::Cursor;
 
     #[test]
@@ -225,5 +228,21 @@ mod tests {
         let parsed_data = parse_hmac_block(&buffer, &hmac_key).unwrap();
 
         assert_eq!(test_data, parsed_data.as_slice());
+    }
+
+    #[test]
+    fn test_hmac_block_truncated() {
+        let hmac_key = GenericArray::from([0x42u8; 64]);
+        let result = parse_hmac_block(&[0u8; 10], &hmac_key);
+        assert!(matches!(result.unwrap_err(), CryptoError::UnexpectedEof));
+    }
+
+    #[test]
+    fn test_hmac_block_length_overflow() {
+        let hmac_key = GenericArray::from([0x42u8; 64]);
+        let mut data = vec![0u8; 36];
+        data[32..36].copy_from_slice(&u32::MAX.to_le_bytes());
+        let result = parse_hmac_block(&data, &hmac_key);
+        assert!(matches!(result.unwrap_err(), CryptoError::UnexpectedEof));
     }
 }

@@ -1,5 +1,8 @@
 use crate::{
-    crypto::ciphers::{AES256Cipher, ChaCha20Cipher, Cipher, TwofishCipher},
+    crypto::{
+        ciphers::{AES256Cipher, ChaCha20Cipher, Cipher, TwofishCipher},
+        errors::CryptoError,
+    },
     kdbx::db::kdbx4::errors::Kdbx4HeaderError,
     utils::writer::{FixedSize, Writable},
 };
@@ -41,12 +44,12 @@ impl TryFrom<&[u8]> for EncryptionAlgorithm {
 }
 
 impl EncryptionAlgorithm {
-    pub fn get_cipher(&self, key: &[u8], iv: &[u8]) -> Box<dyn Cipher> {
-        match self {
+    pub fn get_cipher(&self, key: &[u8], iv: &[u8]) -> Result<Box<dyn Cipher>, CryptoError> {
+        Ok(match self {
             EncryptionAlgorithm::Aes256 => Box::new(AES256Cipher::new(key, iv)),
-            EncryptionAlgorithm::ChaCha20 => Box::new(ChaCha20Cipher::new(key, iv)),
+            EncryptionAlgorithm::ChaCha20 => Box::new(ChaCha20Cipher::new(key, iv)?),
             EncryptionAlgorithm::Twofish => Box::new(TwofishCipher::new(key, iv)),
-        }
+        })
     }
 
     pub fn get_random_iv(&self) -> Result<Vec<u8>, std::io::Error> {

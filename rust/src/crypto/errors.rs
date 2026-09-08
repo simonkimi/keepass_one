@@ -12,4 +12,6 @@ pub enum CryptoError {
     IoError(#[from] std::io::Error),
     #[error("HMAC mismatch")]
     HmacMismatch,
+    #[error("Unexpected end of file")]
+    UnexpectedEof,
 }

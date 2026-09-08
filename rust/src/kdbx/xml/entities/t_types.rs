@@ -156,6 +156,12 @@ impl From<TNullableBoolEx> for Option<bool> {
     }
 }
 
+impl Default for TNullableBoolEx {
+    fn default() -> Self {
+        Self::Null
+    }
+}
+
 impl Serialize for TNullableBoolEx {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -175,16 +181,72 @@ impl<'de> Deserialize<'de> for TNullableBoolEx {
     where
         D: serde::Deserializer<'de>,
     {
-        let value = String::deserialize(deserializer)?;
-        match value.as_str() {
-            "Null" | "null" => Ok(Self::Null),
-            "False" | "false" => Ok(Self::False),
-            "True" | "true" => Ok(Self::True),
-            _ => Err(D::Error::custom(format!(
-                "Invalid TNullableBoolEx value: {}",
-                value
-            ))),
+        struct NullableBoolVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for NullableBoolVisitor {
+            type Value = TNullableBoolEx;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("Null, True, False, or empty")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                parse_nullable_bool(v)
+            }
+
+            fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                parse_nullable_bool(&v)
+            }
+
+            fn visit_unit<E>(self) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(TNullableBoolEx::Null)
+            }
+
+            fn visit_none<E>(self) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(TNullableBoolEx::Null)
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut text = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key == "$text" || key == "$value" {
+                        text = Some(map.next_value::<String>()?);
+                    } else {
+                        let _: serde::de::IgnoredAny = map.next_value()?;
+                    }
+                }
+                parse_nullable_bool(text.as_deref().unwrap_or(""))
+            }
         }
+
+        deserializer.deserialize_any(NullableBoolVisitor)
+    }
+}
+
+fn parse_nullable_bool<E: serde::de::Error>(value: &str) -> Result<TNullableBoolEx, E> {
+    match value.trim() {
+        "Null" | "null" | "" => Ok(TNullableBoolEx::Null),
+        "True" | "true" => Ok(TNullableBoolEx::True),
+        "False" | "false" => Ok(TNullableBoolEx::False),
+        _ => Err(E::custom(format!(
+            "Invalid TNullableBoolEx value: {:?}",
+            value
+        ))),
     }
 }
 

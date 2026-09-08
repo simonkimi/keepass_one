@@ -8,7 +8,6 @@ use crate::kdbx::db::version::{KDBX4_MAJOR_VERSION, KDBX_IDENTIFIER, KEEPASS_LAT
 use crate::utils::writer::{FixedSizeExt, WSExt, Writable};
 use byteorder::{ByteOrder, WriteBytesExt, LE};
 use std::collections::HashMap;
-use std::io::{Cursor, Write};
 
 const HEADER_END: u8 = 0;
 const HEADER_ENCRYPTION_ALGORITHM: u8 = 2;
@@ -24,7 +23,25 @@ pub struct Kdbx4Header {
     unknown_header: HashMap<u8, Vec<u8>>,
 }
 
+fn read_bytes<'a>(
+    data: &'a [u8],
+    pos: usize,
+    len: usize,
+) -> Result<&'a [u8], Kdbx4HeaderError> {
+    data.get(pos..)
+        .and_then(|rest| rest.get(..len))
+        .ok_or(Kdbx4HeaderError::UnexpectedEof)
+}
+
 impl Kdbx4Header {
+    pub fn from_config(config: Kdbx4Config) -> Self {
+        Self {
+            config,
+            public_custom_data: None,
+            unknown_header: HashMap::new(),
+        }
+    }
+
     pub fn copy_with(&self, config: Kdbx4Config) -> Self {
         Self {
             config,
@@ -45,11 +62,11 @@ impl Kdbx4Header {
         let mut pos: usize = 12;
 
         loop {
-            let hf_type = value[pos];
+            let hf_type = *read_bytes(value, pos, 1)?.first().ok_or(Kdbx4HeaderError::UnexpectedEof)?;
             pos += 1;
-            let hf_size = LE::read_u32(&value[pos..]) as usize;
+            let hf_size = LE::read_u32(read_bytes(value, pos, 4)?) as usize;
             pos += 4;
-            let hf_buffer = &value[pos..pos + hf_size];
+            let hf_buffer = read_bytes(value, pos, hf_size)?;
             pos += hf_size;
             match hf_type {
                 HEADER_END => {

@@ -47,3 +47,19 @@ pub(crate) fn calculate_hmac_multiple(
     let result = mac.finalize();
     Ok(result.into_bytes())
 }
+
+pub(crate) fn verify_hmac_multiple(
+    elements: &[&[u8]],
+    key: &[u8],
+    expected: &[u8],
+) -> Result<(), CryptoError> {
+    type HmacSha256 = Hmac<Sha256>;
+    let mut mac = HmacSha256::new_from_slice(key).map_err(CryptoError::InvalidLength)?;
+
+    for element in elements {
+        mac.update(element);
+    }
+
+    mac.verify_slice(expected)
+        .map_err(|_| CryptoError::HmacMismatch)
+}

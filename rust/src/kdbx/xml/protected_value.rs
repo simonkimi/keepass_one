@@ -2,6 +2,7 @@ use crate::{
     crypto::{ciphers::StreamCipherExt, secure_data::SecureData},
     kdbx::{
         config::MemoryProtectConfig,
+        db::kdbx4::header_entity::binary_content::BinaryContent,
         xml::{
             entities::{Entry, Group, KeePassFile, Value},
             errors::{KdbxDatabaseError, KdbxSaveError},
@@ -11,10 +12,23 @@ use crate::{
 
 pub fn collect_protected_values_document(
     document: &mut KeePassFile,
+    binaries: &mut [BinaryContent],
     config: &MemoryProtectConfig,
 ) -> Result<(), KdbxDatabaseError> {
-    collect_protected_values_group(&mut document.root.group, 0, config)?;
+    let stream_offset = assign_protected_binary_offsets(binaries);
+    collect_protected_values_group(&mut document.root.group, stream_offset, config)?;
     Ok(())
+}
+
+pub(crate) fn assign_protected_binary_offsets(binaries: &mut [BinaryContent]) -> usize {
+    let mut stream_offset = 0;
+    for binary in binaries {
+        if binary.is_protected() {
+            binary.offset = Some(stream_offset);
+            stream_offset += binary.content.len();
+        }
+    }
+    stream_offset
 }
 
 fn collect_protected_values_group(
@@ -73,6 +87,26 @@ fn process_protected_values(
     Ok(stream_offset)
 }
 
+pub fn encrypt_protected_binaries(
+    binaries: &mut [BinaryContent],
+    old_cipher: &mut Box<dyn StreamCipherExt>,
+    new_cipher: &mut Box<dyn StreamCipherExt>,
+) -> Result<(), KdbxSaveError> {
+    for binary in binaries {
+        if !binary.is_protected() {
+            continue;
+        }
+        let plaintext = match binary.offset {
+            Some(offset) => old_cipher.decrypt_at_offset(offset, &binary.content)?,
+            None => binary.content.clone(),
+        };
+        let offset = new_cipher.current_pos();
+        binary.content = new_cipher.encrypt(&plaintext)?;
+        binary.offset = Some(offset);
+    }
+    Ok(())
+}
+
 pub fn encrypt_protected_value(
     document: &mut KeePassFile,
     old_cipher: &mut Box<dyn StreamCipherExt>,
@@ -103,9 +137,15 @@ fn encrypt_protected_values_entry(
 ) -> Result<(), KdbxSaveError> {
     for value in &mut entry.string {
         let new_value = match &value.value {
-            Value::Protected { ref value, .. } => {
+            Value::Protected {
+                ref value,
+                offset,
+            } => {
                 let protected_data = value.unsecure()?;
-                let data = old_cipher.decrypt(&protected_data)?;
+                let data = match offset {
+                    Some(off) => old_cipher.decrypt_at_offset(*off, &protected_data)?,
+                    None => old_cipher.decrypt(&protected_data)?,
+                };
                 let offset = new_cipher.current_pos();
                 let new_data = new_cipher.encrypt(&data)?;
                 Some(Value::Protected {
@@ -133,4 +173,24 @@ fn encrypt_protected_values_entry(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
+
+    #[test]
+    fn test_protected_binary_offsets_precede_strings() {
+        let mut binaries = vec![
+            BinaryContent::new(0, vec![1, 2, 3]),
+            BinaryContent::new(BinaryContent::PROTECTED_FLAG, vec![0; 10]),
+            BinaryContent::new(BinaryContent::PROTECTED_FLAG, vec![0; 4]),
+        ];
+        let offset = assign_protected_binary_offsets(&mut binaries);
+        assert_eq!(offset, 14);
+        assert_eq!(binaries[0].offset, None);
+        assert_eq!(binaries[1].offset, Some(0));
+        assert_eq!(binaries[2].offset, Some(10));
+    }
 }

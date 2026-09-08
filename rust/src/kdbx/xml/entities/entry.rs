@@ -33,7 +33,7 @@ pub struct Entry {
     pub override_url: Option<String>,
     /// <https://keepass.info/help/v2/entry.html#gen>
     /// <https://keepass.info/help/kb/pw_quality_est.html>
-    #[serde(rename = "QualityCheck")]
+    #[serde(rename = "QualityCheck", default)]
     pub quality_check: Option<TBool>,
     /// See TGroup/Tags.
     ///

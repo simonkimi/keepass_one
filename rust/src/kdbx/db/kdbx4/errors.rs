@@ -28,6 +28,9 @@ pub enum Kdbx4HeaderError {
 
     #[error("Missing required header fields: {0}")]
     MissingRequiredHeaderFields(&'static str),
+
+    #[error("Unexpected end of file while parsing header")]
+    UnexpectedEof,
 }
 
 #[derive(Debug, Error)]
@@ -43,6 +46,9 @@ pub enum Kdbx4InnerHeaderError {
 
     #[error("Missing inner encryption key")]
     MissingInnerEncryptionKey,
+
+    #[error("Unexpected end of file while parsing inner header")]
+    UnexpectedEof,
 }
 
 #[derive(Debug, Error)]
@@ -76,4 +82,13 @@ pub enum Kdbx4Error {
 
     #[error("XML parse error")]
     DatabaseError(#[from] KdbxDatabaseError),
+
+    #[error(transparent)]
+    Version(#[from] crate::kdbx::db::version::KdbxHeaderError),
+
+    #[error("Unsupported KDBX version")]
+    UnsupportedVersion,
+
+    #[error("Unexpected end of file")]
+    UnexpectedEof,
 }

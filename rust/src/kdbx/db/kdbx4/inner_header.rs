@@ -1,9 +1,12 @@
 use crate::crypto::ciphers::{ChaCha20Cipher, Salsa20Cipher, StreamCipherExt};
+use crate::crypto::errors::CryptoError;
 use crate::crypto::hash::{calculate_sha256, calculate_sha512};
 use crate::kdbx::db::kdbx4::errors::Kdbx4InnerHeaderError;
 use crate::kdbx::db::kdbx4::header_entity::binary_content::BinaryContent;
-use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::{INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20, InnerEncryptionAlgorithm};
-use crate::utils::writer::{FixedSizeExt, Writable, WSExt};
+use crate::kdbx::db::kdbx4::header_entity::inner_encryption_algorithm::{
+    INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20, InnerEncryptionAlgorithm,
+};
+use crate::utils::writer::{FixedSizeExt, WSExt, Writable};
 use byteorder::LittleEndian;
 use byteorder::{ByteOrder, WriteBytesExt};
 use hex_literal::hex;
@@ -24,6 +27,16 @@ pub struct Kdbx4InnerEncryption {
     pub inner_encryption_key: Vec<u8>,
 }
 
+fn read_bytes<'a>(
+    data: &'a [u8],
+    pos: usize,
+    len: usize,
+) -> Result<&'a [u8], Kdbx4InnerHeaderError> {
+    data.get(pos..)
+        .and_then(|rest| rest.get(..len))
+        .ok_or(Kdbx4InnerHeaderError::UnexpectedEof)
+}
+
 impl Kdbx4InnerHeader {
     pub fn try_from(value: &[u8]) -> Result<(Self, usize), Kdbx4InnerHeaderError> {
         let mut pos = 0;
@@ -33,16 +46,21 @@ impl Kdbx4InnerHeader {
         let mut binary_content_vec: Vec<BinaryContent> = Vec::new();
 
         loop {
-            let header_type = value[pos];
+            let header_type = *read_bytes(value, pos, 1)?
+                .first()
+                .ok_or(Kdbx4InnerHeaderError::UnexpectedEof)?;
             pos += 1;
-            let header_size = LittleEndian::read_u32(&value[pos..pos + 4]);
+            let header_size = LittleEndian::read_u32(read_bytes(value, pos, 4)?) as usize;
             pos += 4;
-            let header_data = &value[pos..pos + header_size as usize];
-            pos += header_size as usize;
+            let header_data = read_bytes(value, pos, header_size)?;
+            pos += header_size;
 
             match header_type {
                 INNER_HEADER_END_OF_HEADER => break,
                 INNER_HEADER_INNER_ENCRYPTION_ALGORITHM => {
+                    if header_data.len() < 4 {
+                        return Err(Kdbx4InnerHeaderError::UnexpectedEof);
+                    }
                     let alg_value = LittleEndian::read_u32(header_data);
                     inner_encryption_algorithm =
                         Some(InnerEncryptionAlgorithm::try_from(alg_value)?);
@@ -51,7 +69,7 @@ impl Kdbx4InnerHeader {
                     inner_encryption_key = Some(header_data.to_vec());
                 }
                 INNER_HEADER_BINARY_CONTENT => {
-                    let binary_content = BinaryContent::from(header_data);
+                    let binary_content = BinaryContent::try_from(header_data)?;
                     binary_content_vec.push(binary_content);
                 }
                 _ => {
@@ -60,19 +78,16 @@ impl Kdbx4InnerHeader {
             }
         }
 
-        if let None = inner_encryption_algorithm {
-            return Err(Kdbx4InnerHeaderError::MissingInnerEncryptionAlgorithm);
-        }
-
-        if let None = inner_encryption_key {
-            return Err(Kdbx4InnerHeaderError::MissingInnerEncryptionKey);
-        }
+        let inner_encryption_algorithm = inner_encryption_algorithm
+            .ok_or(Kdbx4InnerHeaderError::MissingInnerEncryptionAlgorithm)?;
+        let inner_encryption_key =
+            inner_encryption_key.ok_or(Kdbx4InnerHeaderError::MissingInnerEncryptionKey)?;
 
         Ok((
             Kdbx4InnerHeader {
                 encryption: Kdbx4InnerEncryption {
-                    inner_encryption_algorithm: inner_encryption_algorithm.unwrap(),
-                    inner_encryption_key: inner_encryption_key.unwrap(),
+                    inner_encryption_algorithm,
+                    inner_encryption_key,
                 },
                 binary_content: binary_content_vec,
             },
@@ -110,20 +125,19 @@ impl Writable for Kdbx4InnerHeader {
 }
 
 impl Kdbx4InnerEncryption {
-    pub fn get_stream_cipher(&self) -> Box<dyn StreamCipherExt> {
+    pub fn get_stream_cipher(&self) -> Result<Box<dyn StreamCipherExt>, CryptoError> {
         match self.inner_encryption_algorithm {
             InnerEncryptionAlgorithm::ChaCha20 => {
                 let h = calculate_sha512(&self.inner_encryption_key);
-                Box::new(ChaCha20Cipher::new(&h[0..32], &h[32..44]))
+                Ok(Box::new(ChaCha20Cipher::new(&h[0..32], &h[32..44])?))
             }
             InnerEncryptionAlgorithm::Salsa20 => {
                 let key = calculate_sha256(&self.inner_encryption_key);
-                Box::new(Salsa20Cipher::new(&key, &SALSA20_IV))
+                Ok(Box::new(Salsa20Cipher::new(&key, &SALSA20_IV)?))
             }
         }
     }
 
-    // 生成一个新的内层加密
     pub fn new() -> Result<Self, std::io::Error> {
         let mut inner_encryption_key = vec![0; INNER_ENCRYPTION_ALGORITHM_KEY_SIZE_CHACHA20];
         getrandom::fill(&mut inner_encryption_key)?;

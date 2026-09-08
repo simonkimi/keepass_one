@@ -8,4 +8,5 @@ pub fn init_app() {
 #[flutter_rust_bridge::frb(sync)]
 pub fn open_kdbx_key_file(key_file: Vec<u8>) -> Vec<u8> {
     crate::kdbx::keys::parse_keyfile(&key_file)
+        .expect("Failed to parse key file")
 }

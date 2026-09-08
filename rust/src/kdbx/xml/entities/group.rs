@@ -28,14 +28,15 @@ pub struct Group {
     /// Specifies whether the group is displayed as expanded in the user interface.
     ///
     /// 指定组在用户界面中是否显示为展开。
-    #[serde(rename = "IsExpanded")]
+    #[serde(rename = "IsExpanded", default)]
     pub is_expanded: Option<TBool>,
     #[serde(rename = "DefaultAutoTypeSequence")]
     #[serde(default)]
     pub default_auto_type_sequence: Option<String>,
-    #[serde(rename = "EnableAutoType")]
+    #[serde(rename = "EnableAutoType", default)]
     pub enable_auto_type: Option<TNullableBoolEx>,
     #[serde(rename = "EnableSearching")]
+    #[serde(default)]
     pub enable_searching: Option<TNullableBoolEx>,
     #[serde(rename = "LastTopVisibleEntry", default)]
     pub last_top_visible_entry: TOptionUuid,
