@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 abstract final class AppTheme {
@@ -16,6 +17,8 @@ abstract final class AppTheme {
 
     return ThemeData(
       colorScheme: colorScheme,
+      fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -31,4 +34,35 @@ abstract final class AppTheme {
       ),
     );
   }
+
+  static TextStyle get systemTextStyle => TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+  );
+
+  static String? get fontFamily => switch (defaultTargetPlatform) {
+    TargetPlatform.windows => 'Segoe UI',
+    TargetPlatform.linux => 'Noto Sans',
+    _ => null,
+  };
+
+  static List<String> get fontFamilyFallback =>
+      switch (defaultTargetPlatform) {
+    TargetPlatform.windows => const [
+      'Microsoft YaHei UI',
+      'Microsoft YaHei',
+      'SimHei',
+    ],
+    TargetPlatform.macOS || TargetPlatform.iOS => const [
+      'PingFang SC',
+      'Hiragino Sans GB',
+      'Heiti SC',
+    ],
+    TargetPlatform.linux => const [
+      'Noto Sans CJK SC',
+      'Noto Sans SC',
+      'WenQuanYi Micro Hei',
+    ],
+    _ => const [],
+  };
 }
