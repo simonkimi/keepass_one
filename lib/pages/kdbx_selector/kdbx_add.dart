@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/cupertino.dart';
+
 import 'package:keepass_one/di.dart';
 import 'package:keepass_one/pages/file_selector/file_selector_page.dart';
 import 'package:keepass_one/services/database/database.dart';
@@ -13,9 +13,10 @@ import 'package:keepass_one/utils/platform.dart';
 import 'package:keepass_one/utils/throttle.dart';
 import 'package:keepass_one/widgets/loading.dart';
 import 'package:keepass_one/widgets/sheet.dart';
+import 'package:material_ui/material_ui.dart';
 
 void onAddKdbxSource(BuildContext context) {
-  showCupertinoModal(
+  showAppModal(
     context: context,
     builder: (context) => FileSelectorPage(
       title: '添加数据源',
@@ -23,14 +24,14 @@ void onAddKdbxSource(BuildContext context) {
       onFileSelect: (path) => _onSelectFile(context, path),
     ),
     useNestedNavigation: true,
-    enableDrag: false,
+    enableDrag: true,
   );
 }
 
 void _onSelectDriver(BuildContext context, BaseDriverConfig? config) {
   if (config == null) return;
   Navigator.of(context).push(
-    CupertinoPageRoute(
+    MaterialPageRoute(
       builder: (context) => KdbxLoadingPage(
         config: config,
         onFileLoaded: (Uint8List data) async {
@@ -60,21 +61,24 @@ Future<void> _onFileLoaded(
 
 FutureOr<bool> _onSelectFile(BuildContext context, String path) async {
   if (!path.endsWith('.kdbx')) {
-    final result = await showCupertinoDialog<bool>(
+    final result = await showDialog<bool>(
       barrierDismissible: true,
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text('提示'),
-        content: Text('这看起来并不是一个kdbx文件, 是否仍然要选择此文件?'),
+      builder: (context) => AlertDialog(
+        title: const Text('提示'),
+        content: const Text('这看起来并不是一个kdbx文件, 是否仍然要选择此文件?'),
         actions: platformActionsBaseOnMobile([
-          CupertinoDialogAction(
-            child: Text('取消'),
+          TextButton(
+            child: const Text('取消'),
             onPressed: () {
               Navigator.of(context).pop(false);
             },
           ),
-          CupertinoDialogAction(
-            child: Text('确定', style: TextStyle(fontWeight: FontWeight.bold)),
+          TextButton(
+            child: const Text(
+              '确定',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             onPressed: () {
               Navigator.of(context).pop(true);
             },
@@ -132,9 +136,13 @@ class _KdbxLoadingPageState extends State<KdbxLoadingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoadingWidget(
-      message: '正在添加数据源...',
-      loadingProgress: _loadingProgress,
+    return Scaffold(
+      body: Center(
+        child: LoadingWidget(
+          message: '正在添加数据源...',
+          loadingProgress: _loadingProgress,
+        ),
+      ),
     );
   }
 }

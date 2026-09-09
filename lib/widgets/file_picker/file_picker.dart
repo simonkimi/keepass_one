@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/services/file_system/file_system_models.dart';
 import 'package:keepass_one/services/file_system/file_system_provider.dart';
 import 'package:keepass_one/widgets/file_picker/file_picker_provider.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 class FilePicker extends StatelessWidget {
@@ -22,13 +22,13 @@ class FilePicker extends StatelessWidget {
       },
       child: Builder(
         builder: (context) {
-          return CupertinoPageScaffold(
-            navigationBar: _buildNavigatorBar(context),
-            child: Navigator(
+          return Scaffold(
+            appBar: _buildAppBar(context),
+            body: Navigator(
               key: _innerNavigatorKey,
               onGenerateInitialRoutes: (navigator, initialRoute) {
                 return <Route<void>>[
-                  CupertinoPageRoute<void>(
+                  MaterialPageRoute<void>(
                     builder: (_) => FilePickerPage(
                       path: context
                           .read<FilePickerProvider>()
@@ -47,29 +47,25 @@ class FilePicker extends StatelessWidget {
     );
   }
 
-  CupertinoNavigationBar _buildNavigatorBar(BuildContext context) {
-    return CupertinoNavigationBar(
-      middle: Text(context.watch<FilePickerProvider>().name ?? '选择文件'),
-      leading: CupertinoButton(
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+      title: Text(context.watch<FilePickerProvider>().name ?? '选择文件'),
+      leadingWidth: 80,
+      leading: TextButton(
         onPressed: () {
           Navigator.of(context).pop();
         },
-        padding: EdgeInsets.zero,
-        child: Text("返回"),
+        child: const Text('返回'),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CupertinoButton(
-            onPressed: () {
-              context.read<FilePickerProvider>().popPath();
-              _innerNavigatorKey.currentState?.maybePop();
-            },
-            padding: EdgeInsets.zero,
-            child: const Icon(CupertinoIcons.chevron_up),
-          ),
-        ],
-      ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            context.read<FilePickerProvider>().popPath();
+            _innerNavigatorKey.currentState?.maybePop();
+          },
+          icon: const Icon(Icons.keyboard_arrow_up),
+        ),
+      ],
     );
   }
 
@@ -119,17 +115,17 @@ class _FilePickerPageState extends State<FilePickerPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Container(
-      color: CupertinoColors.systemBackground,
-      child: _error != null
-          ? _buildError()
-          : _files == null
-          ? _buildLoading()
-          : _buildFileList(context, _files!),
-    );
+    if (_error != null) {
+      return _buildError(context);
+    }
+    if (_files == null) {
+      return _buildLoading();
+    }
+    return _buildFileList(context, _files!);
   }
 
-  Widget _buildError() {
+  Widget _buildError(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -137,30 +133,24 @@ class _FilePickerPageState extends State<FilePickerPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              CupertinoIcons.exclamationmark_triangle,
+              Icons.warning_amber_outlined,
               size: 48,
-              color: CupertinoColors.systemRed,
+              color: colorScheme.error,
             ),
             const SizedBox(height: 16),
             Text(
               _error?.toString() ?? '发生错误',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: CupertinoColors.label,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 24),
-            CupertinoButton(
+            TextButton.icon(
               onPressed: _handleRefresh,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(CupertinoIcons.arrow_clockwise),
-                  const SizedBox(width: 8),
-                  Text('刷新'),
-                ],
-              ),
+              icon: const Icon(Icons.refresh),
+              label: const Text('刷新'),
             ),
           ],
         ),
@@ -202,9 +192,9 @@ class _FilePickerPageState extends State<FilePickerPage>
       itemCount: widget.canGoBack ? files.length + 1 : files.length,
       itemBuilder: (context, index) {
         if (widget.canGoBack && index == 0) {
-          return CupertinoListTile(
-            leading: Icon(CupertinoIcons.chevron_left),
-            title: Text("返回上一级"),
+          return ListTile(
+            leading: const Icon(Icons.chevron_left),
+            title: const Text('返回上一级'),
             onTap: () {
               context.read<FilePickerProvider>().popPath();
               Navigator.of(context).pop();
@@ -215,20 +205,20 @@ class _FilePickerPageState extends State<FilePickerPage>
         final fileIndex = widget.canGoBack ? index - 1 : index;
         final file = files[fileIndex];
 
-        return CupertinoListTile(
+        return ListTile(
           leading: Icon(
-            file.isDirectory ? CupertinoIcons.folder : CupertinoIcons.doc,
+            file.isDirectory
+                ? Icons.folder_outlined
+                : Icons.description_outlined,
           ),
           title: Text(file.name),
-          trailing: file.isDirectory
-              ? Icon(CupertinoIcons.chevron_right)
-              : null,
+          trailing: file.isDirectory ? const Icon(Icons.chevron_right) : null,
           onTap: () async {
             if (file.isDirectory) {
               final provider = context.read<FilePickerProvider>();
               provider.pushPath(file.name);
               await Navigator.of(context).push(
-                CupertinoPageRoute(
+                MaterialPageRoute(
                   builder: (_) => FilePickerPage(
                     path: file.path,
                     onSelect: widget.onSelect,
@@ -246,7 +236,7 @@ class _FilePickerPageState extends State<FilePickerPage>
   }
 
   Widget _buildLoading() {
-    return Center(child: CupertinoActivityIndicator());
+    return const Center(child: CircularProgressIndicator());
   }
 
   @override

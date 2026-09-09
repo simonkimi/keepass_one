@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:keepass_one/pages/kdbx_database/kdbx_key_file_page.dart';
 import 'package:keepass_one/widgets/sheet.dart';
+import 'package:material_ui/material_ui.dart';
 
 class KdbxUnlockPage extends HookWidget {
   const KdbxUnlockPage({super.key, required this.name});
@@ -13,70 +13,64 @@ class KdbxUnlockPage extends HookWidget {
     final displayPassword = useState(false);
     final keyFile = useState<KdbxKeyFileResult?>(null);
     final passwordController = useTextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(middle: Text(name)),
-      child: SafeArea(
+    return Scaffold(
+      appBar: AppBar(title: Text(name)),
+      body: SafeArea(
         child: SizedBox(
           width: double.infinity,
           child: Padding(
-            padding: .symmetric(horizontal: 50),
+            padding: const EdgeInsets.symmetric(horizontal: 50),
             child: Column(
-              mainAxisAlignment: .center,
-              crossAxisAlignment: .center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CupertinoTextField(
-                  placeholder: '密码',
+                TextField(
                   controller: passwordController,
                   obscureText: !displayPassword.value,
-                  suffix: CupertinoButton(
-                    padding: .zero,
-                    child: Icon(
-                      displayPassword.value
-                          ? CupertinoIcons.eye_slash_fill
-                          : CupertinoIcons.eye_solid,
-                    ),
-                    onPressed: () {
-                      displayPassword.value = !displayPassword.value;
-                    },
-                  ),
-                ),
-                SizedBox(height: 5),
-                ClipRRect(
-                  borderRadius: .circular(5),
-                  child: CupertinoListTile(
-                    padding: .zero,
-                    leading: Icon(CupertinoIcons.doc, size: 16),
-                    title: Text(
-                      keyFile.value?.fileName ?? '添加密钥文件',
-                      style: TextStyle(
-                        color: CupertinoColors.systemBlue.resolveFrom(context),
-                        fontSize: 16,
+                  decoration: InputDecoration(
+                    hintText: '密码',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        displayPassword.value
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                       ),
+                      onPressed: () {
+                        displayPassword.value = !displayPassword.value;
+                      },
                     ),
-                    onTap: () async {
-                      final result =
-                          await showCupertinoModal<KdbxKeyFileResult>(
-                            context: context,
-                            builder: (context) => KdbxKeyFilePage(),
-                          );
-                      if (result != null) {
-                        if (result.keyHash.isNotEmpty) {
-                          keyFile.value = result;
-                        } else {
-                          keyFile.value = null;
-                        }
-                      }
-                    },
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 5),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.description_outlined, size: 16),
+                  title: Text(
+                    keyFile.value?.fileName ?? '添加密钥文件',
+                    style: TextStyle(color: colorScheme.primary, fontSize: 16),
+                  ),
+                  onTap: () async {
+                    final result = await showAppModal<KdbxKeyFileResult>(
+                      context: context,
+                      builder: (context) => const KdbxKeyFilePage(),
+                    );
+                    if (result != null) {
+                      if (result.keyHash.isNotEmpty) {
+                        keyFile.value = result;
+                      } else {
+                        keyFile.value = null;
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: CupertinoButton.tinted(
-                    padding: .zero,
+                  child: FilledButton.tonal(
                     onPressed: () {},
-                    child: Text('解锁'),
+                    child: const Text('解锁'),
                   ),
                 ),
               ],

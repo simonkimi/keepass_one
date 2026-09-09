@@ -12,7 +12,6 @@ dependencies:
     sdk: flutter
   provider: ^6.1.5+1
 
-  cupertino_icons: ^1.0.8
   rust_lib_keepass_one:
     path: rust_builder
   flutter_rust_bridge: 2.13.0
@@ -38,6 +37,7 @@ dependencies:
   crypto: ^3.0.7
   xml: ^7.0.1
   dio_http_formatter: ^3.3.1
+  material_ui: ^1.2.0
 
 dev_dependencies:
   flutter_test:

@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/pages/file_selector/webdav_settings.dart';
 import 'package:keepass_one/services/sync/driver_config.dart';
 import 'package:keepass_one/services/sync/local/local_config.dart';
 import 'package:keepass_one/services/sync/webdav/webdav_config.dart';
+import 'package:material_ui/material_ui.dart';
 
 class FileSelectorPage extends StatelessWidget {
   const FileSelectorPage({
@@ -21,41 +21,40 @@ class FileSelectorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(title),
-        leading: CupertinoButton(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        leading: IconButton(
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
           },
-          padding: .zero,
-          child: Icon(CupertinoIcons.chevron_left),
+          icon: const Icon(Icons.chevron_left),
         ),
-        padding: EdgeInsetsDirectional.zero,
-        transitionBetweenRoutes: false,
       ),
-      child: Container(
-        color: CupertinoColors.systemGroupedBackground,
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: .max,
-            children: [
-              CupertinoListSection.insetGrouped(
-                children: [
-                  CupertinoListTile(
-                    leading: Icon(CupertinoIcons.folder),
-                    title: Text('本地文件'),
-                    onTap: () => _onSelectLocal(context),
-                  ),
-                  CupertinoListTile(
-                    leading: Icon(CupertinoIcons.link_circle),
-                    title: Text('WebDAV'),
-                    onTap: () => _onSelectWebDav(context),
-                  ),
-                ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Card.filled(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.folder_outlined),
+                      title: const Text('本地文件'),
+                      onTap: () => _onSelectLocal(context),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.link_outlined),
+                      title: const Text('WebDAV'),
+                      onTap: () => _onSelectWebDav(context),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -63,7 +62,7 @@ class FileSelectorPage extends StatelessWidget {
 
   Future<void> _onSelectWebDav(BuildContext context) async {
     final config = await Navigator.of(context).push<WebDavConfig>(
-      CupertinoPageRoute(builder: (context) => WebdavSettingsPage()),
+      MaterialPageRoute(builder: (context) => const WebdavSettingsPage()),
     );
     if (config != null && context.mounted) {
       onSelectDriver(config);
@@ -72,7 +71,7 @@ class FileSelectorPage extends StatelessWidget {
 
   Future<void> _onSelectLocal(BuildContext context) async {
     final file = await FilePicker.pickFile(
-      type: .any,
+      type: FileType.any,
     );
 
     if (file == null || !context.mounted || file.path == null) return;

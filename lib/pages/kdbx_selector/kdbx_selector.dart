@@ -1,49 +1,54 @@
-import 'package:flutter/cupertino.dart';
 import 'package:keepass_one/di.dart';
 import 'package:keepass_one/pages/kdbx_database/kdbx_unlock_page.dart';
 import 'package:keepass_one/pages/kdbx_selector/kdbx_add.dart';
 import 'package:keepass_one/services/database/database.dart';
+import 'package:material_ui/material_ui.dart';
 
 class KdbxSelectorPage extends StatelessWidget {
   const KdbxSelectorPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: _buildCupertinoNavigationBar(context),
-      child: StreamBuilder(
+    return Scaffold(
+      appBar: _buildAppBar(context),
+      body: StreamBuilder(
         stream: getIt.get<AppDatabase>().kdbxFileDao.watchAllKdbxItems(),
         builder: (context, AsyncSnapshot<List<KdbxFileData>> snapshot) {
           if (!snapshot.hasData) {
-            return const Center(child: CupertinoActivityIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.data!.isEmpty) {
             return Center(
-              child: CupertinoButton(
+              child: FilledButton.tonal(
                 onPressed: () {
                   onAddKdbxSource(context);
                 },
-                child: Text('添加数据源'),
+                child: const Text('添加数据源'),
               ),
             );
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
               final item = snapshot.data![index];
-              return CupertinoListTile(
-                title: Text(item.name),
-                subtitle: Text(item.description),
-                trailing: Icon(CupertinoIcons.chevron_right),
-                onTap: () {
-                  Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) => KdbxUnlockPage(name: item.name),
-                    ),
-                  );
-                },
+              return Card.filled(
+                clipBehavior: Clip.antiAlias,
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(item.name),
+                  subtitle: Text(item.description),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => KdbxUnlockPage(name: item.name),
+                      ),
+                    );
+                  },
+                ),
               );
             },
           );
@@ -52,17 +57,15 @@ class KdbxSelectorPage extends StatelessWidget {
     );
   }
 
-  CupertinoNavigationBar _buildCupertinoNavigationBar(BuildContext context) {
-    return CupertinoNavigationBar(
-      leading: CupertinoButton(
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+      leading: IconButton(
         onPressed: () {
           onAddKdbxSource(context);
         },
-        padding: EdgeInsets.zero,
-        child: Icon(CupertinoIcons.add),
+        icon: const Icon(Icons.add_outlined),
       ),
-      padding: EdgeInsetsDirectional.zero,
-      middle: Text('Keepass One'),
+      title: const Text('Keepass One'),
     );
   }
 }

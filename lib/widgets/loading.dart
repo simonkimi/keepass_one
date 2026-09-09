@@ -1,5 +1,4 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class LoadingWidget extends StatelessWidget {
   final String message;
@@ -17,11 +16,13 @@ class LoadingWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        LinearProgressIndicator(
-          value: loadingProgress < 0.0 ? null : loadingProgress,
-          color: CupertinoColors.activeBlue.resolveFrom(context),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: LinearProgressIndicator(
+            value: loadingProgress < 0.0 ? null : loadingProgress,
+          ),
         ),
-        SizedBox(height: 16.0),
+        const SizedBox(height: 16.0),
         Text(message),
       ],
     );

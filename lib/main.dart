@@ -1,10 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:keepass_one/app/theme.dart';
 import 'package:keepass_one/di.dart';
 import 'package:keepass_one/pages/kdbx_selector/kdbx_selector.dart';
 import 'package:keepass_one/services/database/database.dart';
 import 'package:keepass_one/src/rust/frb_generated.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:material_ui/material_ui.dart';
 
 Future<void> initializeApp() async {
   await RustLib.init();
@@ -27,10 +28,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: CupertinoThemeData(brightness: Brightness.light),
-      home: KdbxSelectorPage(),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
+      builder: (context, child) => MaterialUiCompatibilityBridge(child: child!),
+      home: const KdbxSelectorPage(),
     );
   }
 }
